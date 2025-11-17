@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фитнес Трекер - Главная</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="nav-logo">FITNESS TRACKER</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('login') }}" class="btn-secondary">Вход</a>
+                <a href="{{ url_for('register') }}" class="btn-primary">Регистрация</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="hero-section">
+            <div class="hero-content">
+                <h1>Достигайте своих фитнес-целей</h1>
+                <p>Отслеживайте тренировки, ставьте цели и достигайте новых высот с нашим трекером</p>
+                <div class="hero-actions">
+                    <a href="{{ url_for('register') }}" class="btn-primary btn-large">Начать сейчас</a>
+                    <a href="{{ url_for('login') }}" class="btn-secondary">Уже есть аккаунт</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="features-section">
+            <h2>Возможности трекера</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Отслеживание прогресса</h3>
+                    <p>Ведите подробный дневник тренировок и анализируйте свой прогресс</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Постановка целей</h3>
+                    <p>Ставьте SMART-цели и отслеживайте их выполнение</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h3>Детальная аналитика</h3>
+                    <p>Получайте подробную статистику и графики прогресса</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💪</div>
+                    <h3>Библиотека упражнений</h3>
+                    <p>15+ специализированных упражнений с подробными описаниями</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Шаблоны тренировок</h3>
+                    <p>Создавайте и используйте шаблоны для регулярных тренировок</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Удобный интерфейс</h3>
+                    <p>Адаптивный дизайн для использования на любых устройствах</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <h2>Готовы начать?</h2>
+            <p>Присоединяйтесь к тысячам пользователей, которые уже достигли своих целей</p>
+            <a href="{{ url_for('register') }}" class="btn-primary btn-large">Зарегистрироваться бесплатно</a>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Фитнес Трекер. Все права защищены.</p>
+        </div>
+    </footer>
+</body>
+</html>

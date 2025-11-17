@@ -1,0 +1,824 @@
+{% extends "base.html" %}
+
+{% block title %}Аналитика и Расчёты - Фитнес Трекер{% endblock %}
+
+{% block content %}
+<div class="analytics-page">
+    <div class="header">
+        <h1>🔬 Научная аналитика и расчёты</h1>
+        <p>Точные научные расчеты на основе ваших данных и физиологических показателей</p>
+    </div>
+
+    <div class="analytics-grid">
+        <!-- Продвинутый калькулятор прогрессии -->
+        <div class="analytics-card full-width">
+            <div class="card-header">
+                <h3>📈 Калькулятор прогрессии</h3>
+                <p>Расчет времени достижения целей с учетом адаптации и плато</p>
+            </div>
+            
+            <form id="advanced-progression-form" class="calculator-form">
+                <div class="form-group">
+                    <label for="advanced-exercise">Упражнение:</label>
+                    <select id="advanced-exercise" name="exercise_type" required>
+                        <option value="">Выберите упражнение</option>
+                        <option value="Жим лежа">Жим лежа</option>
+                        <option value="Сведение рук в кроссовере на грудь">Сведение рук в кроссовере на грудь</option>
+                        <option value="Разгибания на трицепс с канатной рукоятью в кроссовере">Разгибания на трицепс с канатной рукоятью в кроссовере</option>
+                        <option value="Сгибания на бицепс в РТ">Сгибания на бицепс в РТ</option>
+                        <option value="Подъем на бицепс штанги обратным хватом">Подъем на бицепс штанги обратным хватом</option>
+                        <option value="Ягодичный мост в РТ">Ягодичный мост в РТ</option>
+                        <option value="Разгибание голени в БТ">Разгибание голени в БТ</option>
+                        <option value="Сгибание голени в БТ">Сгибание голени в БТ</option>
+                        <option value="Икроножные в Т">Икроножные в Т</option>
+                        <option value="Вращения гантелей в согнутых руках">Вращения гантелей в согнутых руках</option>
+                        <option value="Вертикальная тяга сидя">Вертикальная тяга сидя</option>
+                        <option value="Горизонтальная тяга">Горизонтальная тяга</option>
+                        <option value="Экстензия">Экстензия</option>
+                        <option value="Сгибания в предплечьях">Сгибания в предплечьях</option>
+                        <option value="Работа с гирей на предплечья">Работа с гирей на предплечья</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="advanced-current">Текущий вес (кг):</label>
+                        <input type="number" id="advanced-current" name="current_weight" step="0.5" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="advanced-target">Целевой вес (кг):</label>
+                        <input type="number" id="advanced-target" name="target_weight" step="0.5" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="training-age">Стаж тренировок:</label>
+                        <select id="training-age" name="training_age">
+                            <option value="1.5">До 6 месяцев</option>
+                            <option value="1.2" selected>6-12 месяцев</option>
+                            <option value="1.0">1-2 года</option>
+                            <option value="0.8">2-5 лет</option>
+                            <option value="0.6">Более 5 лет</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="genetics">Генетический потенциал:</label>
+                        <select id="genetics" name="genetics">
+                            <option value="1.3">Высокий</option>
+                            <option value="1.1" selected>Средний</option>
+                            <option value="0.9">Низкий</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="advanced-frequency">Тренировок в неделю:</label>
+                        <select id="advanced-frequency" name="frequency">
+                            <option value="1">1 раз</option>
+                            <option value="2" selected>2 раза</option>
+                            <option value="3">3 раза</option>
+                            <option value="4">4+ раз</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="recovery">Качество восстановления:</label>
+                        <select id="recovery" name="recovery">
+                            <option value="0.9">Плохое</option>
+                            <option value="1.0" selected>Среднее</option>
+                            <option value="1.1">Хорошее</option>
+                            <option value="1.2">Отличное</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary full-width-btn">Рассчитать продвинутую прогрессию</button>
+            </form>
+
+            <div id="advanced-progression-result" class="result-container" style="display: none;">
+                <h4>🎯 Результаты продвинутого расчета:</h4>
+                <div class="result-grid-horizontal">
+                    <div class="result-item-horizontal">
+                        <div class="result-title">Оптимистичный прогноз</div>
+                        <div class="result-value" id="optimistic-time"></div>
+                    </div>
+                    <div class="result-item-horizontal">
+                        <div class="result-title">Реалистичный прогноз</div>
+                        <div class="result-value" id="realistic-time"></div>
+                    </div>
+                    <div class="result-item-horizontal">
+                        <div class="result-title">Консервативный прогноз</div>
+                        <div class="result-value" id="conservative-time"></div>
+                    </div>
+                </div>
+                
+                <div class="progression-plan">
+                    <h5>📅 План прогрессии по неделям:</h5>
+                    <div id="advanced-progression-chart-container" class="chart-mini">
+                        <canvas id="advancedProgressionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="training-recommendations">
+                    <h5>💡 Рекомендации по тренировкам:</h5>
+                    <div class="recommendations-list">
+                        <div class="recommendation-item">
+                            <strong>Недели 1-4:</strong> Фокусируйтесь на технике, увеличивайте вес на 2.5кг каждые 2 тренировки
+                        </div>
+                        <div class="recommendation-item">
+                            <strong>Недели 5-8:</strong> Добавьте 1 дополнительный подход, работайте в диапазоне 8-12 повторений
+                        </div>
+                        <div class="recommendation-item">
+                            <strong>Недели 9-12:</strong> Внедрите технику "отдых-пауза" для преодоления плато
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Научный калькулятор калорий -->
+        <div class="analytics-card full-width">
+            <div class="card-header">
+                <h3>🔥 Калькулятор калорий</h3>
+                <p>Расчет расхода энергии с учетом метаболических эквивалентов (MET)</p>
+            </div>
+            
+            <form id="scientific-calories-form" class="calculator-form">
+                <div class="form-group">
+                    <label for="scientific-exercise">Упражнение:</label>
+                    <select id="scientific-exercise" name="exercise_type" required>
+                        <option value="">Выберите упражнение</option>
+                        <option value="Жим лежа">Жим лежа</option>
+                        <option value="Сведение рук в кроссовере на грудь">Сведение рук в кроссовере на грудь</option>
+                        <option value="Разгибания на трицепс с канатной рукоятью в кроссовере">Разгибания на трицепс с канатной рукоятью в кроссовере</option>
+                        <option value="Сгибания на бицепс в РТ">Сгибания на бицепс в РТ</option>
+                        <option value="Подъем на бицепс штанги обратным хватом">Подъем на бицепс штанги обратным хватом</option>
+                        <option value="Ягодичный мост в РТ">Ягодичный мост в РТ</option>
+                        <option value="Разгибание голени в БТ">Разгибание голени в БТ</option>
+                        <option value="Сгибание голени в БТ">Сгибание голени в БТ</option>
+                        <option value="Икроножные в Т">Икроножные в Т</option>
+                        <option value="Вращения гантелей в согнутых руках">Вращения гантелей в согнутых руках</option>
+                        <option value="Вертикальная тяга сидя">Вертикальная тяга сидя</option>
+                        <option value="Горизонтальная тяга">Горизонтальная тяга</option>
+                        <option value="Экстензия">Экстензия</option>
+                        <option value="Сгибания в предплечьях">Сгибания в предплечьях</option>
+                        <option value="Работа с гирей на предплечья">Работа с гирей на предплечья</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="scientific-duration">Длительность (минут):</label>
+                        <input type="number" id="scientific-duration" name="duration" value="60" min="1" max="240" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="scientific-weight">Ваш вес (кг):</label>
+                        <input type="number" id="scientific-weight" name="user_weight" value="70" step="0.5" min="30" max="200" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="intensity">Интенсивность:</label>
+                        <select id="intensity" name="intensity">
+                            <option value="1.0">Низкая (60-70% от 1ПМ)</option>
+                            <option value="1.2" selected>Средняя (70-80% от 1ПМ)</option>
+                            <option value="1.4">Высокая (80-90% от 1ПМ)</option>
+                            <option value="1.6">Максимальная (90-100% от 1ПМ)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="rest-ratio">Соотношение работа/отдых:</label>
+                        <select id="rest-ratio" name="rest_ratio">
+                            <option value="1.0">1:1 (высокая плотность)</option>
+                            <option value="0.9">1:2 (средняя плотность)</option>
+                            <option value="0.8" selected>1:3 (стандартная)</option>
+                            <option value="0.7">1:4 (низкая плотность)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary full-width-btn">Рассчитать научным методом</button>
+            </form>
+
+            <div id="scientific-calories-result" class="result-container" style="display: none;">
+                <h4>🔬 Научные результаты расчета:</h4>
+                <div class="result-grid">
+                    <div class="result-item">
+                        <strong>Основной расход:</strong> 
+                        <span id="base-calories"></span> ккал
+                    </div>
+                    <div class="result-item">
+                        <strong>MET значение:</strong> 
+                        <span id="scientific-met-value"></span>
+                    </div>
+                </div>
+                
+                <div class="scientific-comparison">
+                    <h5>⚖️ Энергетические эквиваленты:</h5>
+                    <div class="comparison-items">
+                        <div class="comparison-item" id="comparison-walking">
+                            <span>🚶 Ходьба:</span>
+                            <span id="walking-time">0 мин</span>
+                        </div>
+                        <div class="comparison-item" id="comparison-running">
+                            <span>🏃 Бег:</span>
+                            <span id="running-time">0 мин</span>
+                        </div>
+                        <div class="comparison-item" id="comparison-cycling">
+                            <span>🚴 Велосипед:</span>
+                            <span id="cycling-time">0 мин</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Научные рекомендации -->
+    <div class="scientific-motivation-section">
+        <div class="scientific-recommendations">
+            <h3>🎯 Рекомендации</h3>
+            <div class="recommendations-grid">
+                <div class="recommendation">
+                    <div class="rec-icon">🔄</div>
+                    <div class="rec-content">
+                        <strong>Оптимизация нагрузки:</strong>
+                        <p>Увеличьте объем на 5-10% для стимуляции гипертрофии</p>
+                    </div>
+                </div>
+                <div class="recommendation">
+                    <div class="rec-icon">⏱️</div>
+                    <div class="rec-content">
+                        <strong>Время восстановления:</strong>
+                        <p>Оптимальное время отдыха между подходами: 60-90 сек</p>
+                    </div>
+                </div>
+                <div class="recommendation">
+                    <div class="rec-icon">📊</div>
+                    <div class="rec-content">
+                        <strong>Прогрессия:</strong>
+                        <p>Рекомендуемое увеличение веса: 2.5% в неделю</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Анимация появления элементов
+    function animateElement(element, animationName) {
+        element.style.animation = `none`;
+        setTimeout(() => {
+            element.style.animation = `${animationName} 0.6s ease-out`;
+        }, 10);
+    }
+
+    // Научный расчет калорий
+    document.getElementById('scientific-calories-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const data = {
+            exercise_type: formData.get('exercise_type'),
+            duration: parseInt(formData.get('duration')),
+            user_weight: parseFloat(formData.get('user_weight')),
+            intensity: parseFloat(formData.get('intensity')),
+            rest_ratio: parseFloat(formData.get('rest_ratio'))
+        };
+
+        calculateScientificCalories(data);
+    });
+
+    function calculateScientificCalories(data) {
+        // MET значения для упражнений
+        const metValues = {
+            'Жим лежа': 6.0,
+            'Сведение рук в кроссовере на грудь': 5.0,
+            'Разгибания на трицепс с канатной рукоятью в кроссовере': 4.0,
+            'Сгибания на бицепс в РТ': 4.0,
+            'Подъем на бицепс штанги обратным хватом': 4.5,
+            'Ягодичный мост в РТ': 5.5,
+            'Разгибание голени в БТ': 5.0,
+            'Сгибание голени в БТ': 5.0,
+            'Икроножные в Т': 4.0,
+            'Вращения гантелей в согнутых руках': 3.5,
+            'Вертикальная тяга сидя': 6.0,
+            'Горизонтальная тяга': 6.0,
+            'Экстензия': 5.5,
+            'Сгибания в предплечьях': 3.0,
+            'Работа с гирей на предплечья': 4.0
+        };
+
+        const baseMET = metValues[data.exercise_type] || 5.0;
+        const adjustedMET = baseMET * data.intensity * data.rest_ratio;
+        
+        // Основной расход по формуле: MET * вес * время (в часах)
+        const baseCalories = adjustedMET * data.user_weight * (data.duration / 60);
+        
+        displayScientificResults({
+            baseCalories: Math.round(baseCalories),
+            metValue: adjustedMET.toFixed(2)
+        });
+    }
+
+    function displayScientificResults(result) {
+        const resultDiv = document.getElementById('scientific-calories-result');
+        
+        // Обновляем только существующие элементы
+        if (document.getElementById('base-calories')) {
+            document.getElementById('base-calories').textContent = result.baseCalories;
+        }
+        if (document.getElementById('scientific-met-value')) {
+            document.getElementById('scientific-met-value').textContent = result.metValue;
+        }
+        
+        // Расчет эквивалентов
+        if (document.getElementById('walking-time')) {
+            document.getElementById('walking-time').textContent = Math.round(result.baseCalories / 4) + ' мин';
+        }
+        if (document.getElementById('running-time')) {
+            document.getElementById('running-time').textContent = Math.round(result.baseCalories / 10) + ' мин';
+        }
+        if (document.getElementById('cycling-time')) {
+            document.getElementById('cycling-time').textContent = Math.round(result.baseCalories / 8) + ' мин';
+        }
+        
+        if (resultDiv) {
+            resultDiv.style.display = 'block';
+            animateElement(resultDiv, 'slideInUp');
+        }
+    }
+
+    // Продвинутый расчет прогрессии
+    let advancedProgressionChart = null;
+
+    document.getElementById('advanced-progression-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const data = {
+            exercise_type: formData.get('exercise_type'),
+            current_weight: parseFloat(formData.get('current_weight')),
+            target_weight: parseFloat(formData.get('target_weight')),
+            training_age: parseFloat(formData.get('training_age')),
+            genetics: parseFloat(formData.get('genetics')),
+            frequency: parseInt(formData.get('frequency')),
+            recovery: parseFloat(formData.get('recovery'))
+        };
+
+        // Проверяем, что все необходимые поля заполнены
+        if (!data.exercise_type || !data.current_weight || !data.target_weight) {
+            alert('Пожалуйста, заполните все обязательные поля');
+            return;
+        }
+
+        calculateAdvancedProgression(data);
+    });
+
+    function calculateAdvancedProgression(data) {
+        const weightDiff = data.target_weight - data.current_weight;
+        
+        if (weightDiff <= 0) {
+            alert('Целевой вес должен быть больше текущего веса');
+            return;
+        }
+        
+        // Базовый расчет с учетом факторов
+        const baseWeeks = weightDiff / (2.5 * (data.frequency / 2));
+        const adjustedWeeks = baseWeeks * data.training_age * data.genetics * data.recovery;
+        
+        const optimistic = Math.max(1, Math.round(adjustedWeeks * 0.7));
+        const realistic = Math.max(1, Math.round(adjustedWeeks));
+        const conservative = Math.max(1, Math.round(adjustedWeeks * 1.3));
+        
+        displayAdvancedProgressionResults({
+            optimistic: optimistic,
+            realistic: realistic,
+            conservative: conservative,
+            data: data
+        });
+    }
+
+    function displayAdvancedProgressionResults(result) {
+        const resultDiv = document.getElementById('advanced-progression-result');
+        
+        if (!resultDiv) return;
+        
+        // Обновляем элементы прогнозов
+        if (document.getElementById('optimistic-time')) {
+            document.getElementById('optimistic-time').textContent = result.optimistic + ' недель';
+        }
+        if (document.getElementById('realistic-time')) {
+            document.getElementById('realistic-time').textContent = result.realistic + ' недель';
+        }
+        if (document.getElementById('conservative-time')) {
+            document.getElementById('conservative-time').textContent = result.conservative + ' недель';
+        }
+        
+        // Построение графика прогрессии
+        buildAdvancedProgressionChart(result);
+        
+        resultDiv.style.display = 'block';
+        animateElement(resultDiv, 'slideInUp');
+    }
+
+    function buildAdvancedProgressionChart(result) {
+        const ctx = document.getElementById('advancedProgressionChart');
+        if (!ctx) return;
+        
+        const ctx2d = ctx.getContext('2d');
+        
+        if (advancedProgressionChart) {
+            advancedProgressionChart.destroy();
+        }
+        
+        // Генерация данных для графика прогрессии
+        const weeks = [];
+        const weights = [];
+        const currentWeight = result.data.current_weight;
+        const targetWeight = result.data.target_weight;
+        const realisticWeeks = result.realistic;
+        
+        for (let week = 0; week <= realisticWeeks; week++) {
+            weeks.push(`Неделя ${week}`);
+            // Линейная прогрессия с небольшим ускорением в начале
+            const progress = week / realisticWeeks;
+            const weight = currentWeight + (targetWeight - currentWeight) * progress;
+            weights.push(Math.round(weight * 10) / 10); // Округляем до 0.1 кг
+        }
+        
+        // Добавляем целевую точку
+        if (realisticWeeks > 0) {
+            weeks.push(`Цель`);
+            weights.push(targetWeight);
+        }
+
+        advancedProgressionChart = new Chart(ctx2d, {
+            type: 'line',
+            data: {
+                labels: weeks,
+                datasets: [{
+                    label: 'План прогрессии веса',
+                    data: weights,
+                    borderColor: '#4b5563',
+                    backgroundColor: 'rgba(75, 85, 99, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#4b5563',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'План увеличения рабочего веса'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Вес: ${context.parsed.y.toFixed(1)} кг`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        title: {
+                            display: true,
+                            text: 'Вес (кг)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Временная шкала'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Инициализация при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        // Анимация появления карточек
+        setTimeout(() => {
+            document.querySelectorAll('.analytics-card').forEach((card, index) => {
+                setTimeout(() => {
+                    animateElement(card, 'fadeInUp');
+                }, index * 100);
+            });
+        }, 300);
+    });
+</script>
+
+<style>
+    /* Анимации */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    /* Анимация для карточек */
+    .analytics-card {
+        animation: fadeInUp 0.6s ease-out;
+        animation-fill-mode: both;
+    }
+
+    /* Кнопка на всю ширину */
+    .full-width-btn {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+
+    /* Стили для мотивационной статистики */
+    .scientific-motivation-section {
+        background: linear-gradient(135deg, #1e293b, #334155);
+        color: white;
+        padding: 2.5rem;
+        border-radius: var(--radius-xl);
+        margin-top: 2rem;
+        box-shadow: var(--shadow-xl);
+        animation: fadeInUp 0.8s ease-out;
+    }
+
+    .result-grid-horizontal {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin: 1.5rem 0;
+    }
+
+    .result-item-horizontal {
+        background: white;
+        padding: 1.5rem;
+        border-radius: var(--radius-lg);
+        text-align: center;
+        border: 2px solid var(--border-color);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .result-item-horizontal:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .result-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .result-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--primary-color);
+    }
+
+    .scientific-recommendations {
+        margin-top: 0;
+    }
+
+    .calories-breakdown, .scientific-comparison {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .comparison-items {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .comparison-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem;
+        background: var(--light-bg);
+        border-radius: var(--radius-md);
+        font-size: 0.9rem;
+        transition: transform 0.2s ease;
+    }
+
+    .comparison-item:hover {
+        transform: translateX(5px);
+    }
+
+    .stats-overview {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: var(--radius-lg);
+        text-align: center;
+        border: 2px solid var(--border-color);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin: 0.5rem 0;
+    }
+
+    .stat-trend {
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .stat-trend.positive {
+        color: #10b981;
+    }
+
+    /* Стили для списка упражнений */
+    .exercises-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .exercise-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: white;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-color);
+        transition: transform 0.2s ease;
+    }
+
+    .exercise-item:hover {
+        transform: translateX(5px);
+        border-color: var(--primary-color);
+    }
+
+    .exercise-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        flex: 1;
+    }
+
+    .exercise-stats {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .exercise-stats .stat {
+        background: var(--light-bg);
+        padding: 0.25rem 0.75rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .no-data-message {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-secondary);
+        font-style: italic;
+    }
+
+    .recommendations-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .recommendation {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: var(--radius-lg);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: transform 0.3s ease;
+    }
+
+    .recommendation:hover {
+        transform: translateY(-3px);
+    }
+
+    .rec-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .rec-content strong {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: white;
+    }
+
+    .rec-content p {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 0.9rem;
+    }
+
+    /* Стили для плана прогрессии */
+    .progression-plan {
+        margin-top: 1.5rem;
+    }
+
+    .training-recommendations {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .recommendations-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .recommendation-item {
+        padding: 1rem;
+        background: var(--light-bg);
+        border-radius: var(--radius-md);
+        font-size: 0.9rem;
+        transition: transform 0.2s ease;
+    }
+
+    .recommendation-item:hover {
+        transform: translateX(5px);
+    }
+
+    .recommendation-item strong {
+        color: var(--primary-color);
+    }
+
+    @media (max-width: 768px) {
+        .result-grid-horizontal {
+            grid-template-columns: 1fr;
+        }
+        
+        .recommendations-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .exercise-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .exercise-stats {
+            width: 100%;
+            justify-content: space-between;
+        }
+    }
+</style>
+{% endblock %}

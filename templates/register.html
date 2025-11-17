@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация - Фитнес Трекер{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-form">
+        <h2>✨ Регистрация</h2>
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 1.5rem;">
+            Создайте аккаунт и начните отслеживать прогресс
+        </p>
+        <form method="POST">
+            <div class="form-group">
+                <label for="username" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">
+                    Имя пользователя
+                </label>
+                <input type="text" id="username" name="username" placeholder="Введите имя пользователя" required minlength="3" maxlength="50">
+            </div>
+            
+            <div class="form-group">
+                <label for="email" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">
+                    Email
+                </label>
+                <input type="email" id="email" name="email" placeholder="your@email.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">
+                    Пароль
+                </label>
+                <input type="password" id="password" name="password" placeholder="Минимум 6 символов" required minlength="6">
+            </div>
+            
+            <div class="form-group">
+                <label for="weight" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">
+                    Ваш вес (кг)
+                </label>
+                <input type="number" id="weight" name="weight" placeholder="70" value="70" step="0.5" min="30" max="300" required>
+                <small style="display: block; margin-top: 0.25rem; color: var(--text-secondary);">
+                    Используется для расчета калорий
+                </small>
+            </div>
+            
+            <button type="submit" class="btn-primary">
+                🚀 Зарегистрироваться
+            </button>
+        </form>
+        <p style="text-align: center; color: var(--text-secondary); margin-top: 1.5rem;">
+            Уже есть аккаунт? <a href="{{ url_for('login') }}" style="color: var(--primary-color); font-weight: 600; text-decoration: none;">Войдите здесь</a>
+        </p>
+    </div>
+</div>
+
+<style>
+.auth-form label {
+    font-size: 0.9rem;
+}
+
+.auth-form small {
+    font-size: 0.8rem;
+}
+
+.auth-form input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.auth-form input[type="number"]::-webkit-inner-spin-button,
+.auth-form input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+</style>
+{% endblock %}
