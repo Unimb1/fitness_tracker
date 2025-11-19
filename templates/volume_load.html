@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Объемная нагрузка - Фитнес Трекер{% endblock %}
+
+{% block content %}
+<div class="volume-load-page">
+    <div class="header">
+        <h1>Статистика объемной нагрузки</h1>
+        <p style="color: var(--text-secondary); margin-top: 0.5rem;">
+            Отслеживание прогресса через объемную нагрузку (sets × reps × weight) за последние 30 дней
+        </p>
+    </div>
+
+    {% if exercise_stats %}
+    <div class="volume-stats-grid">
+        {% for exercise_type, stats in exercise_stats.items() %}
+        <div class="volume-stat-card">
+            <h3>{{ exercise_type }}</h3>
+            <div class="volume-stats">
+                <div class="volume-stat-item">
+                    <span class="stat-label">Всего объем:</span>
+                    <span class="stat-value">{{ "%.0f"|format(stats.total_volume) }} кг</span>
+                </div>
+                <div class="volume-stat-item">
+                    <span class="stat-label">Тренировок:</span>
+                    <span class="stat-value">{{ stats.sessions }}</span>
+                </div>
+                <div class="volume-stat-item">
+                    <span class="stat-label">Максимальный объем:</span>
+                    <span class="stat-value">{{ "%.0f"|format(stats.max_volume) }} кг</span>
+                </div>
+                <div class="volume-stat-item">
+                    <span class="stat-label">Средний объем:</span>
+                    <span class="stat-value">{{ "%.0f"|format(stats.total_volume / stats.sessions) if stats.sessions > 0 else 0 }} кг</span>
+                </div>
+            </div>
+            
+            {% if stats.volumes|length > 1 %}
+            <div class="volume-chart-container">
+                <canvas id="chart-{{ loop.index0 }}"></canvas>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-data">
+        <p>Данных об объемной нагрузке пока нет. Добавьте тренировки для отслеживания прогресса.</p>
+    </div>
+    {% endif %}
+
+    <div class="abbreviations-info" style="margin-top: 2rem;">
+        <h3>Что такое объемная нагрузка:</h3>
+        <ul>
+            <li><strong>Объемная нагрузка</strong> = количество подходов × количество повторений × вес</li>
+            <li>Это один из ключевых показателей прогресса в силовых тренировках</li>
+            <li>Постепенное увеличение объемной нагрузки приводит к росту мышечной массы</li>
+            <li>Отслеживайте свой прогресс и стремитесь бить предыдущие рекорды!</li>
+        </ul>
+    </div>
+</div>
+
+{% if exercise_stats_json %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const exerciseStats = {{ exercise_stats_json | safe }};
+    let chartIndex = 0;
+    
+    for (const [exerciseType, stats] of Object.entries(exerciseStats)) {
+        if (stats.volumes && stats.volumes.length > 1) {
+            const ctx = document.getElementById('chart-' + chartIndex);
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: stats.dates.map(function(date) {
+                            const d = new Date(date);
+                            return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+                        }),
+                        datasets: [{
+                            label: 'Объемная нагрузка (кг)',
+                            data: stats.volumes,
+                            borderColor: 'rgb(99, 102, 241)',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Объем (кг)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+            chartIndex++;
+        }
+    }
+});
+</script>
+{% endif %}
+
+<style>
+.volume-load-page .header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.volume-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.volume-stat-card {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 2px solid var(--border-color);
+}
+
+.volume-stat-card h3 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.volume-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.volume-stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--light-bg);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.volume-chart-container {
+    height: 200px;
+    margin-top: 1rem;
+}
+</style>
+{% endblock %}
+
