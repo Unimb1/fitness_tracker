@@ -1,0 +1,1588 @@
+{% extends "base.html" %}
+
+{% block title %}Добавить тренировку - Фитнес Трекер{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Добавить тренировку</h2>
+
+    <form method="POST" id="workout-session-form">
+        <div class="form-group">
+            <label for="date">Дата тренировки:</label>
+            <input type="date" id="date" name="date" value="{{ today }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="workout_name">Название тренировки:</label>
+            <input type="text" id="workout_name" name="workout_name" placeholder="Оставьте пустым для автоматического названия">
+        </div>
+
+        <div class="form-group">
+            <label for="duration_minutes">Продолжительность тренировки (минуты):</label>
+            <input type="number" id="duration_minutes" name="duration_minutes" min="0" step="1" placeholder="Обязательно для заполнения">
+        </div>
+
+        <div class="form-group">
+            <label for="default_rest_time">Время отдыха между подходами (секунды):</label>
+            <input type="number" id="default_rest_time" name="default_rest_time" min="30" max="300" value="90">
+        </div>
+
+        <div id="exercises-container">
+            <div class="exercise-form" data-exercise-index="0">
+                <div class="exercise-header">
+                    <h4>Упражнение 1</h4>
+                    <button type="button" class="btn-remove-exercise remove-exercise-btn" style="display: none;" title="Удалить упражнение">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="exercise-controls">
+                    <button type="button" class="btn-small btn-info get-suggestion-btn" data-exercise-index="0">
+                        💡 Предсказание веса
+                    </button>
+                </div>
+                
+                <div class="form-group">
+                    <label>Упражнение:</label>
+                    <select name="exercise_type_0" class="exercise-select" required>
+                        <option value="">Выберите упражнение</option>
+                        {% set standard_exercises = {
+                            'Грудь': ['Жим лежа', 'Сведение рук в кроссовере на грудь'],
+                            'Руки': ['Разгибания на трицепс с канатной рукоятью в кроссовере', 'Сгибания на бицепс в рычажном тренажере'],
+                            'Плечи': ['Махи на плечи со свободным весом', 'Отведение плеча в блочном тренажере &quot;reverse fly&quot;'],
+                            'Ноги': ['Ягодичный мост в рычажном тренажере', 'Разгибание бедра стоя в кроссовере / рычажном тренажере', 'Болгарские выпады со свободным весом / в смите', 'Отведение бедра сидя в сдвоенном блочном тренажере (большая ягодичная)', 'Отведение с наклоном вперед бедра сидя в сдвоенном блочном тренажере (малая и средняя ягодичные)', 'Приседание в Смите'],
+                            'Спина': ['Вертикальная тяга сидя', 'Горизонтальная тяга троссовая в блочном тренажере', 'Экстензия на наклонной скамье'],
+                            'Кардио': ['Ходьба на дорожке с наклоном 13-14']
+                        } %}
+                        {% for muscle_group in ['Грудь', 'Руки', 'Плечи', 'Ноги', 'Спина', 'Кардио'] %}
+                        {% set group_custom_exercises = custom_exercises|selectattr('muscle_group', 'equalto', muscle_group)|list if custom_exercises else [] %}
+                        {% if standard_exercises[muscle_group] or group_custom_exercises %}
+                        <optgroup label="{{ muscle_group }}">
+                            {% for exercise_name in standard_exercises[muscle_group] %}
+                            <option value="{{ exercise_name }}">{{ exercise_name }}</option>
+                            {% endfor %}
+                            {% for exercise in group_custom_exercises %}
+                            <option value="{{ exercise.name }}">{{ exercise.name }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="sets-container" data-exercise-index="0">
+                    <div class="set-form" data-set-index="0">
+                        <div class="set-header">
+                            <h5>Подход 1</h5>
+                            <button type="button" class="btn-remove-set remove-set-btn" style="display: none;" title="Удалить подход">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="form-row set-row">
+                            <div class="form-group">
+                                <label>Вес (кг):</label>
+                                <input type="number" name="weight_0_0" step="0.5" class="weight-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Повторения:</label>
+                                <input type="number" name="reps_0_0" min="1" class="reps-input">
+                            </div>
+                            <div class="form-group set-timer-group">
+                                <!-- Кнопка запуска перерыва -->
+                                <button type="button" class="btn-set-rest start-set-rest-btn" data-exercise-index="0" data-set-index="0">
+                                    <span class="rest-btn-icon">⏱</span>
+                                    <span class="rest-btn-text">Перерыв</span>
+                                </button>
+                                
+                                <!-- Таймер перерыва (изначально скрыт) -->
+                                <div class="set-rest-timer" style="display: none;">
+                                    <div class="rest-timer-display">
+                                        <span class="rest-timer-time">01:30</span>
+                                    </div>
+                                    <div class="rest-timer-controls">
+                                        <button type="button" class="btn-timer-control btn-rest-pause">
+                                            <svg class="timer-icon" viewBox="0 0 24 24" width="16" height="16">
+                                                <path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                                            </svg>
+                                        </button>
+                                        <button type="button" class="btn-timer-control btn-rest-stop">
+                                            <svg class="timer-icon" viewBox="0 0 24 24" width="16" height="16">
+                                                <path fill="currentColor" d="M6 6h12v12H6z"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="button" class="btn-secondary add-set-btn" data-exercise-index="0" style="margin-top: 1rem; width: 100%;">
+                    <span>+</span>
+                    <span>Добавить подход</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="form-actions-full">
+            <button type="button" id="add-exercise-btn" class="btn-secondary btn-full" style="margin-bottom: 1rem;">
+                <span>+</span>
+                <span>Добавить упражнение</span>
+            </button>
+            
+            <!-- Таймер тренировки -->
+            <div id="workout-timer-container" class="workout-timer-container" style="display: none;">
+                <div class="workout-timer-content">
+                    <div class="workout-timer-display">
+                        <span id="workout-timer">00:00:00</span>
+                        <div class="workout-timer-label">Время тренировки</div>
+                    </div>
+                    <div class="workout-timer-controls">
+                        <button type="button" id="workout-pause-btn" class="btn-timer-control btn-timer-pause">
+                            <svg class="timer-icon" viewBox="0 0 24 24" width="18" height="18">
+                                <path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                            </svg>
+                            <span class="btn-text">Пауза</span>
+                        </button>
+                        <button type="button" id="workout-reset-btn" class="btn-timer-control btn-timer-reset">
+                            <svg class="timer-icon" viewBox="0 0 24 24" width="18" height="18">
+                                <path fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                            </svg>
+                            <span class="btn-text">Сброс</span>
+                        </button>
+                        <button type="button" id="workout-stop-btn" class="btn-timer-control btn-timer-stop">
+                            <svg class="timer-icon" viewBox="0 0 24 24" width="18" height="18">
+                                <path fill="currentColor" d="M9 16h6v-6H9v6zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+                            </svg>
+                            <span class="btn-text">Завершить</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Завершенная тренировка -->
+            <div id="workout-completed-container" class="workout-timer-container workout-completed" style="display: none;">
+                <div class="workout-timer-content">
+                    <div class="workout-timer-display">
+                        <span id="completed-workout-timer">00:00:00</span>
+                        <div class="workout-completed-label">Тренировка завершена</div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" id="start-workout-timer-btn" class="btn-primary btn-full" style="margin-bottom: 1rem;">
+                <span>⏱</span>
+                <span>Начать тренировку</span>
+            </button>
+            <button type="submit" class="btn-primary btn-full">
+                <span>💾</span>
+                <span>Сохранить тренировку</span>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Всплывающее уведомление для рекомендаций -->
+<div id="suggestion-toast" class="toast" style="display: none;">
+    <div class="toast-content">
+        <div class="toast-icon">💡</div>
+        <div class="toast-message">
+            <strong>Рекомендация</strong>
+            <span id="suggestion-toast-text"></span>
+        </div>
+        <div class="toast-actions">
+            <button id="suggestion-toast-apply" class="btn-toast btn-toast-apply" style="display: none;">Применить</button>
+            <button id="suggestion-toast-close" class="btn-toast btn-toast-close">✕</button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ===== ОСНОВНЫЕ СТИЛИ ТАЙМЕРА ТРЕНИРОВКИ ===== */
+.workout-timer-container {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin: 12px 0;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    border: none;
+    animation: slideDown 0.5s ease-out;
+    border: 2px solid rgba(255,255,255,0.1);
+    min-height: auto;
+}
+
+.workout-completed {
+    background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%) !important;
+    border-color: rgba(255,255,255,0.2);
+}
+
+.workout-timer-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.workout-timer-display {
+    text-align: center;
+    color: white;
+    flex: 1;
+}
+
+.workout-timer-display span {
+    font-size: 2.2rem;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    display: block;
+    margin-bottom: 2px;
+    color: #ffffff;
+    line-height: 1;
+}
+
+.workout-timer-label {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    font-weight: 500;
+    color: #e0e0e0;
+    margin-top: 2px;
+}
+
+.workout-completed-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #e8f5e9;
+    margin-top: 5px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.workout-timer-controls {
+    display: flex;
+    gap: 8px;
+}
+
+/* ===== СТИЛИ КНОПОК ТАЙМЕРА ===== */
+.btn-timer-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    position: relative;
+    overflow: hidden;
+    font-size: 0.85rem;
+}
+
+.btn-timer-control::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-timer-control:hover::before {
+    left: 100%;
+}
+
+.btn-timer-control:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.btn-timer-control:active {
+    transform: translateY(0);
+}
+
+.btn-timer-pause {
+    background: linear-gradient(135deg, #ffd700, #ffa500);
+    color: #333;
+}
+
+.btn-timer-reset {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    color: white;
+}
+
+.btn-timer-stop {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    color: white;
+}
+
+.timer-icon {
+    flex-shrink: 0;
+}
+
+.btn-text {
+    font-size: 0.85rem;
+}
+
+/* ===== СТИЛИ ТАЙМЕРА ПЕРЕРЫВА В ПОДХОДАХ ===== */
+.set-timer-group {
+    position: relative;
+    min-width: 140px;
+}
+
+.btn-set-rest {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 15px;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(30, 60, 114, 0.4);
+}
+
+.btn-set-rest:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(30, 60, 114, 0.6);
+}
+
+.rest-btn-icon {
+    font-size: 1rem;
+}
+
+.rest-btn-text {
+    font-size: 0.85rem;
+}
+
+.set-rest-timer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: white;
+    animation: timerSlideIn 0.3s ease-out;
+    box-shadow: 0 4px 15px rgba(30, 60, 114, 0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.rest-timer-display {
+    flex: 1;
+    text-align: center;
+}
+
+.rest-timer-time {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    font-size: 1rem;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    color: #ffffff;
+}
+
+.rest-timer-controls {
+    display: flex;
+    gap: 4px;
+}
+
+.rest-timer-controls .btn-timer-control {
+    padding: 6px 8px;
+    min-width: auto;
+    border-radius: 6px;
+}
+
+.rest-timer-controls .timer-icon {
+    width: 14px;
+    height: 14px;
+}
+
+/* ===== УЛУЧШЕННЫЕ СТИЛИ КНОПОК С АНИМАЦИЕЙ ===== */
+.btn-animated {
+    position: relative;
+    overflow: hidden;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow-md);
+    width: 100%;
+    margin-bottom: 12px;
+    padding: 0;
+    min-height: var(--touch-target-min);
+    display: block;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+.btn-animated.btn-secondary {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+}
+
+.btn-animated.btn-warning {
+    background: linear-gradient(135deg, #ffd700, #ffa500);
+}
+
+.btn-animated.btn-primary {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+}
+
+.btn-content {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px;
+    font-size: 1rem;
+    font-weight: 600;
+    z-index: 3;
+    pointer-events: none;
+    color: inherit;
+}
+
+.btn-animated.btn-secondary .btn-content {
+    color: white;
+}
+
+.btn-animated.btn-warning .btn-content {
+    color: #333;
+}
+
+.btn-animated.btn-primary .btn-content {
+    color: white;
+}
+
+.btn-hover-effect {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.6s ease;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.btn-animated:hover .btn-hover-effect {
+    left: 100%;
+}
+
+.btn-animated:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-animated:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-md);
+}
+
+/* Специфические стили для кнопки добавления подхода */
+.add-set-btn {
+    width: auto;
+    margin-top: 10px;
+    margin-bottom: 0;
+    max-width: 100%;
+}
+
+/* ===== СТИЛИ УПРАВЛЕНИЯ УПРАЖНЕНИЯМИ И ПОДХОДАМИ ===== */
+.exercise-form {
+    position: relative;
+    background: linear-gradient(135deg, #f8fafc, white);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 2px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+}
+
+.exercise-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.exercise-header h4 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.btn-remove-exercise {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    color: var(--error-color);
+    border: none;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    opacity: 0.7;
+    border-radius: var(--radius-sm);
+    box-shadow: none;
+    min-height: 32px;
+    min-width: 32px;
+    pointer-events: auto;
+    z-index: 10;
+}
+
+.btn-remove-exercise:hover {
+    transform: scale(1.1);
+    opacity: 1;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error-color);
+}
+
+.btn-remove-exercise:active {
+    transform: scale(0.95);
+}
+
+.exercise-controls {
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 0.75rem;
+}
+
+.get-suggestion-btn {
+    background: linear-gradient(135deg, var(--info-color), #2563eb);
+    color: white;
+    border: none;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    min-height: var(--touch-target-min);
+    pointer-events: auto;
+}
+
+.get-suggestion-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.get-suggestion-btn:active {
+    transform: translateY(0);
+}
+
+.set-form {
+    background: white;
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border: 2px solid var(--border-color);
+    position: relative;
+    box-shadow: var(--shadow-sm);
+}
+
+.set-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.set-header h5 {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.btn-remove-set {
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    opacity: 0.7;
+    border-radius: var(--radius-sm);
+    min-height: 32px;
+    min-width: 32px;
+    pointer-events: auto;
+}
+
+.btn-remove-set:hover {
+    background: rgba(239, 68, 68, 0.1);
+    transform: scale(1.1);
+    opacity: 1;
+    color: var(--error-color);
+}
+
+.btn-remove-set:active {
+    transform: scale(0.95);
+}
+
+/* ===== СТИЛИ ВСПЛЫВАЮЩИХ УВЕДОМЛЕНИЙ ===== */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    z-index: 10000;
+    max-width: 400px;
+    animation: toastSlideIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    border-left: 4px solid #4facfe;
+    overflow: hidden;
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    gap: 12px;
+}
+
+.toast-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.toast-message {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.toast-message strong {
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.toast-message span {
+    color: #666;
+    font-size: 0.85rem;
+    line-height: 1.3;
+}
+
+.toast-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.btn-toast {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-toast-apply {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.btn-toast-apply:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(79, 172, 254, 0.4);
+}
+
+.btn-toast-close {
+    background: #f8f9fa;
+    color: #666;
+    border: 1px solid #e9ecef;
+}
+
+.btn-toast-close:hover {
+    background: #e9ecef;
+}
+
+/* ===== ОСНОВНЫЕ СТИЛИ ФОРМЫ ===== */
+.form-container {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    max-width: 100%;
+    margin: 0 auto;
+    border: 1px solid var(--border-color);
+}
+
+.form-container h2 {
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+    font-size: 1.75rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.form-row.set-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 1rem;
+    align-items: end;
+}
+
+.form-row.set-row .form-group {
+    margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    .form-container {
+        padding: 1.5rem;
+    }
+    
+    .form-row.set-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .set-timer-group {
+        width: 100%;
+        min-width: 100%;
+    }
+    
+    .form-row.set-row .form-group {
+        margin-bottom: 1rem;
+    }
+}
+
+.btn-full {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    min-height: var(--touch-target-min);
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.form-actions-full {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* ===== АНИМАЦИИ ===== */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes timerSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateX(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+    }
+}
+
+@keyframes toastSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100px) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes toastSlideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100px) scale(0.8);
+    }
+}
+
+.toast-hide {
+    animation: toastSlideOut 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* ===== АДАПТИВНОСТЬ ===== */
+@media (max-width: 768px) {
+    .workout-timer-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+    
+    .workout-timer-controls {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .btn-timer-control {
+        flex: 1;
+        min-width: 100px;
+        justify-content: center;
+    }
+    
+    .toast {
+        left: 10px;
+        right: 10px;
+        max-width: none;
+    }
+    
+    .set-rest-timer {
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .rest-timer-controls {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .workout-timer-display span {
+        font-size: 1.8rem;
+    }
+    
+    .exercise-form {
+        padding: 1.25rem;
+    }
+}
+
+/* Стиль для пульсации таймера - убрана */
+.timer-pulse {
+    /* animation: pulse 1s infinite; - убрана пульсация */
+}
+
+/* Стиль для завершения таймера */
+.timer-complete {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52) !important;
+    animation: completePulse 0.5s infinite;
+}
+
+@keyframes completePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Выравнивание кнопки "Начать тренировку" при повторном появлении */
+#start-workout-timer-btn {
+    display: flex !important;
+    justify-content: center;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Проверяем, есть ли сохраненное упражнение из раздела "Мои упражнения"
+    const selectedExercise = localStorage.getItem('selectedExercise');
+    if (selectedExercise) {
+        const firstExerciseSelect = document.querySelector('select[name="exercise_type_0"]');
+        if (firstExerciseSelect) {
+            // Ищем опцию с таким названием
+            const option = Array.from(firstExerciseSelect.options).find(opt => opt.value === selectedExercise);
+            if (option) {
+                firstExerciseSelect.value = selectedExercise;
+                firstExerciseSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
+        // Удаляем из localStorage после использования
+        localStorage.removeItem('selectedExercise');
+    }
+    let exerciseCount = 1;
+    const container = document.getElementById('exercises-container');
+    const addExerciseBtn = document.getElementById('add-exercise-btn');
+
+    // ===== ТАЙМЕР ТРЕНИРОВКИ =====
+    let workoutTimerInterval = null;
+    let workoutStartTime = null; // Время начала таймера
+    let workoutPausedTime = 0; // Накопленное время при паузах
+    let isWorkoutTimerRunning = false;
+    
+    const workoutTimerContainer = document.getElementById('workout-timer-container');
+    const workoutCompletedContainer = document.getElementById('workout-completed-container');
+    const workoutTimerDisplay = document.getElementById('workout-timer');
+    const completedWorkoutTimerDisplay = document.getElementById('completed-workout-timer');
+    const startWorkoutTimerBtn = document.getElementById('start-workout-timer-btn');
+    const workoutPauseBtn = document.getElementById('workout-pause-btn');
+    const workoutResetBtn = document.getElementById('workout-reset-btn');
+    const workoutStopBtn = document.getElementById('workout-stop-btn');
+    const durationMinutesInput = document.getElementById('duration_minutes');
+    const workoutNameInput = document.getElementById('workout_name');
+    const dateInput = document.getElementById('date');
+
+    let lastWorkoutTime = -1;
+    
+    function getWorkoutTimeElapsed() {
+        if (!isWorkoutTimerRunning || !workoutStartTime) {
+            return workoutPausedTime;
+        }
+        const now = Date.now();
+        return workoutPausedTime + Math.floor((now - workoutStartTime) / 1000);
+    }
+    
+    function updateWorkoutTimerDisplay() {
+        const workoutTimeElapsed = getWorkoutTimeElapsed();
+        const hours = Math.floor(workoutTimeElapsed / 3600);
+        const minutes = Math.floor((workoutTimeElapsed % 3600) / 60);
+        const seconds = workoutTimeElapsed % 60;
+        
+        const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Анимация при изменении секунд (убрана пульсация)
+        if (workoutTimeElapsed !== lastWorkoutTime) {
+            if (workoutTimerDisplay) {
+                workoutTimerDisplay.classList.add('digit-change');
+                setTimeout(() => {
+                    workoutTimerDisplay.classList.remove('digit-change');
+                }, 200);
+            }
+            if (completedWorkoutTimerDisplay) {
+                completedWorkoutTimerDisplay.classList.add('digit-change');
+                setTimeout(() => {
+                    completedWorkoutTimerDisplay.classList.remove('digit-change');
+                }, 200);
+            }
+        }
+        
+        if (workoutTimerDisplay) workoutTimerDisplay.textContent = timeString;
+        if (completedWorkoutTimerDisplay) completedWorkoutTimerDisplay.textContent = timeString;
+        
+        lastWorkoutTime = workoutTimeElapsed;
+    }
+
+    function startWorkoutTimer() {
+        if (isWorkoutTimerRunning) return;
+        
+        isWorkoutTimerRunning = true;
+        workoutStartTime = Date.now();
+        
+        // Обновляем отображение каждую секунду
+        workoutTimerInterval = setInterval(() => {
+            updateWorkoutTimerDisplay();
+        }, 1000);
+        
+        updateWorkoutTimerDisplay();
+    }
+
+    function pauseWorkoutTimer() {
+        if (!isWorkoutTimerRunning) return;
+        
+        // Сохраняем накопленное время
+        workoutPausedTime = getWorkoutTimeElapsed();
+        workoutStartTime = null;
+        
+        clearInterval(workoutTimerInterval);
+        isWorkoutTimerRunning = false;
+        workoutPauseBtn.innerHTML = '<svg class="timer-icon" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M8 5v14l11-7z"/></svg><span class="btn-text">Продолжить</span>';
+    }
+
+    function resumeWorkoutTimer() {
+        if (isWorkoutTimerRunning) return;
+        
+        isWorkoutTimerRunning = true;
+        workoutStartTime = Date.now();
+        
+        workoutTimerInterval = setInterval(() => {
+            updateWorkoutTimerDisplay();
+        }, 1000);
+        
+        workoutPauseBtn.innerHTML = '<svg class="timer-icon" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg><span class="btn-text">Пауза</span>';
+        updateWorkoutTimerDisplay();
+    }
+
+    function resetWorkoutTimer() {
+        clearInterval(workoutTimerInterval);
+        isWorkoutTimerRunning = false;
+        workoutStartTime = null;
+        workoutPausedTime = 0;
+        lastWorkoutTime = -1;
+        updateWorkoutTimerDisplay();
+        
+        // Скрываем таймер и показываем кнопку "Начать тренировку"
+        workoutTimerContainer.style.display = 'none';
+        workoutCompletedContainer.style.display = 'none';
+        startWorkoutTimerBtn.style.display = 'flex';
+        
+        // Сбрасываем поле продолжительности
+        durationMinutesInput.value = '';
+    }
+
+    function completeWorkoutTimer() {
+        const workoutTimeElapsed = getWorkoutTimeElapsed();
+        clearInterval(workoutTimerInterval);
+        isWorkoutTimerRunning = false;
+        workoutStartTime = null;
+        
+        // Записываем время в поле продолжительности (в минутах)
+        const durationMinutes = Math.ceil(workoutTimeElapsed / 60);
+        durationMinutesInput.value = durationMinutes;
+        
+        // Показываем завершенный таймер
+        workoutTimerContainer.style.display = 'none';
+        workoutCompletedContainer.style.display = 'block';
+        startWorkoutTimerBtn.style.display = 'none';
+        
+        updateWorkoutTimerDisplay();
+    }
+    
+    // Обновляем таймер при возврате на страницу
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && isWorkoutTimerRunning) {
+            updateWorkoutTimerDisplay();
+        }
+    });
+    
+    // Обновляем таймер при фокусе на окно
+    window.addEventListener('focus', function() {
+        if (isWorkoutTimerRunning) {
+            updateWorkoutTimerDisplay();
+        }
+    });
+
+    // Обработчики таймера тренировки
+    startWorkoutTimerBtn.addEventListener('click', function() {
+        this.style.display = 'none';
+        workoutTimerContainer.style.display = 'block';
+        workoutCompletedContainer.style.display = 'none';
+        startWorkoutTimer();
+    });
+
+    workoutPauseBtn.addEventListener('click', function() {
+        if (isWorkoutTimerRunning) {
+            pauseWorkoutTimer();
+        } else {
+            resumeWorkoutTimer();
+        }
+    });
+
+    workoutResetBtn.addEventListener('click', resetWorkoutTimer);
+    workoutStopBtn.addEventListener('click', completeWorkoutTimer);
+
+    // ===== ТАЙМЕРЫ ПЕРЕРЫВА ДЛЯ ПОДХОДОВ =====
+    let activeRestTimer = null;
+
+    container.addEventListener('click', function(e) {
+        // Запуск таймера перерыва
+        if (e.target.closest('.start-set-rest-btn')) {
+            const restBtn = e.target.closest('.start-set-rest-btn');
+            const exerciseIndex = restBtn.getAttribute('data-exercise-index');
+            const setIndex = restBtn.getAttribute('data-set-index');
+            
+            // Останавливаем предыдущий активный таймер
+            if (activeRestTimer) {
+                stopRestTimer(activeRestTimer.container, activeRestTimer.button);
+            }
+            
+            startSetRestTimer(exerciseIndex, setIndex, restBtn);
+        }
+        
+        // Пауза/продолжение таймера перерыва
+        if (e.target.closest('.btn-rest-pause')) {
+            const pauseBtn = e.target.closest('.btn-rest-pause');
+            const timerContainer = pauseBtn.closest('.set-rest-timer');
+            toggleRestTimer(timerContainer);
+        }
+        
+        // Остановка таймера перерыва
+        if (e.target.closest('.btn-rest-stop')) {
+            const stopBtn = e.target.closest('.btn-rest-stop');
+            const timerContainer = stopBtn.closest('.set-rest-timer');
+            const restBtn = timerContainer.previousElementSibling;
+            stopRestTimer(timerContainer, restBtn);
+        }
+    });
+
+    function startSetRestTimer(exerciseIndex, setIndex, restBtn) {
+        const restTime = parseInt(document.getElementById('default_rest_time').value) || 90;
+        const startTime = Date.now(); // Время начала таймера
+        let pausedTime = 0; // Накопленное время при паузах
+        let isRestTimerRunning = true;
+        let pauseStartTime = null;
+
+        // Скрываем кнопку и показываем таймер
+        restBtn.style.display = 'none';
+        const timerContainer = restBtn.nextElementSibling;
+        timerContainer.style.display = 'flex';
+        const timerDisplay = timerContainer.querySelector('.rest-timer-time');
+        const pauseBtn = timerContainer.querySelector('.btn-rest-pause');
+        let lastRestTime = restTime;
+
+        function getTimeLeft() {
+            if (!isRestTimerRunning && pauseStartTime) {
+                // Таймер на паузе
+                return restTime - pausedTime;
+            }
+            const elapsed = pausedTime + Math.floor((Date.now() - startTime) / 1000);
+            return Math.max(0, restTime - elapsed);
+        }
+
+        function updateRestTimerDisplay() {
+            const timeLeft = getTimeLeft();
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Анимация при изменении времени (убрана пульсация)
+            if (timeLeft !== lastRestTime) {
+                timerDisplay.classList.add('digit-change');
+                setTimeout(() => {
+                    timerDisplay.classList.remove('digit-change');
+                }, 200);
+            }
+            
+            timerDisplay.textContent = timeString;
+            lastRestTime = timeLeft;
+
+            // Меняем цвет при малом времени (без пульсации)
+            if (timeLeft <= 10) {
+                timerDisplay.style.color = '#ffeb3b';
+            } else if (timeLeft <= 30) {
+                timerDisplay.style.color = '#ff9800';
+            } else {
+                timerDisplay.style.color = '#ffffff';
+            }
+        }
+
+        updateRestTimerDisplay();
+
+        const timerInterval = setInterval(() => {
+            if (isRestTimerRunning) {
+                const timeLeft = getTimeLeft();
+                updateRestTimerDisplay();
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timerContainer.classList.add('timer-complete');
+                    playTimerSound();
+                    showTimerNotification('Перерыв закончился! Приступайте к следующему подходу.');
+                    
+                    // Автоматически скрываем через 3 секунды
+                    setTimeout(() => {
+                        stopRestTimer(timerContainer, restBtn);
+                    }, 3000);
+                }
+            }
+        }, 100);
+
+        // Сохраняем данные таймера
+        timerContainer.dataset.timerInterval = timerInterval;
+        timerContainer.dataset.startTime = startTime;
+        timerContainer.dataset.restTime = restTime;
+        timerContainer.dataset.pausedTime = pausedTime;
+        timerContainer.dataset.isRunning = 'true';
+        
+        // Сохраняем активный таймер
+        activeRestTimer = {
+            container: timerContainer,
+            button: restBtn,
+            interval: timerInterval,
+            startTime: startTime,
+            restTime: restTime,
+            pausedTime: pausedTime
+        };
+        
+        // Обновляем таймер при возврате на страницу
+        const visibilityHandler = function() {
+            if (!document.hidden && isRestTimerRunning) {
+                updateRestTimerDisplay();
+            }
+        };
+        document.addEventListener('visibilitychange', visibilityHandler);
+        timerContainer.dataset.visibilityHandler = 'true';
+    }
+
+    function toggleRestTimer(timerContainer) {
+        const isRunning = timerContainer.dataset.isRunning === 'true';
+        const pauseBtn = timerContainer.querySelector('.btn-rest-pause');
+        const startTime = parseInt(timerContainer.dataset.startTime);
+        const restTime = parseInt(timerContainer.dataset.restTime);
+        let pausedTime = parseFloat(timerContainer.dataset.pausedTime) || 0;
+        
+        if (isRunning) {
+            // Пауза
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            pausedTime += elapsed;
+            timerContainer.dataset.pausedTime = pausedTime;
+            timerContainer.dataset.startTime = Date.now(); // Обновляем время старта для следующего возобновления
+            timerContainer.dataset.isRunning = 'false';
+            pauseBtn.innerHTML = '<svg class="timer-icon" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>';
+        } else {
+            // Возобновление
+            timerContainer.dataset.startTime = Date.now();
+            timerContainer.dataset.isRunning = 'true';
+            pauseBtn.innerHTML = '<svg class="timer-icon" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+        }
+    }
+
+    function stopRestTimer(timerContainer, restBtn) {
+        const timerInterval = timerContainer.dataset.timerInterval;
+        if (timerInterval) {
+            clearInterval(parseInt(timerInterval));
+        }
+        
+        timerContainer.style.display = 'none';
+        restBtn.style.display = 'flex';
+        timerContainer.classList.remove('timer-complete');
+        
+        // Очищаем активный таймер
+        if (activeRestTimer && activeRestTimer.container === timerContainer) {
+            activeRestTimer = null;
+        }
+    }
+
+    function playTimerSound() {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 1);
+        } catch (e) {
+            console.log('Audio not supported');
+        }
+    }
+
+    function showTimerNotification(message) {
+        if (Notification.permission === 'granted') {
+            new Notification('Таймер', {
+                body: message,
+                icon: '/static/favicon.ico'
+            });
+        }
+    }
+
+    // ===== УЛУЧШЕННОЕ ПРЕДСКАЗАНИЕ ВЕСА =====
+    const suggestionToast = document.getElementById('suggestion-toast');
+    const suggestionToastText = document.getElementById('suggestion-toast-text');
+    const suggestionToastApply = document.getElementById('suggestion-toast-apply');
+    const suggestionToastClose = document.getElementById('suggestion-toast-close');
+    let toastTimeout = null;
+
+    function showSuggestionToast(message, exerciseIndex, suggestionData) {
+        // Очищаем предыдущий таймаут
+        if (toastTimeout) {
+            clearTimeout(toastTimeout);
+        }
+        
+        // Скрываем предыдущее уведомление
+        suggestionToast.classList.remove('toast-hide');
+        suggestionToast.style.display = 'none';
+        
+        // Обновляем содержимое
+        suggestionToastText.textContent = message;
+
+        // Если есть данные для применения, показываем кнопку "Применить"
+        if (suggestionData) {
+            suggestionToastApply.style.display = 'block';
+            suggestionToastApply.onclick = function() {
+                applySuggestion(exerciseIndex, suggestionData);
+                hideSuggestionToast();
+            };
+        } else {
+            suggestionToastApply.style.display = 'none';
+        }
+
+        // Показываем уведомление с анимацией
+        setTimeout(() => {
+            suggestionToast.style.display = 'block';
+        }, 50);
+
+        // Автоматически скрываем через 6 секунд
+        toastTimeout = setTimeout(() => {
+            hideSuggestionToast();
+        }, 6000);
+    }
+
+    function hideSuggestionToast() {
+        suggestionToast.classList.add('toast-hide');
+        setTimeout(() => {
+            suggestionToast.style.display = 'none';
+            suggestionToast.classList.remove('toast-hide');
+        }, 500);
+    }
+
+    function getWeightSuggestion(exerciseType, exerciseIndex) {
+        if (!exerciseType) {
+            showSuggestionToast('Выберите упражнение для получения рекомендации', exerciseIndex);
+            return;
+        }
+        
+        fetch(`/api/weight-prediction/${encodeURIComponent(exerciseType)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.suggestion) {
+                    showSuggestionToast(
+                        `${data.suggestion.reason} - Вес: ${data.suggestion.weight}кг, Повторения: ${data.suggestion.reps}`,
+                        exerciseIndex,
+                        data.suggestion
+                    );
+                } else {
+                    showSuggestionToast(data.message || 'Не удалось получить рекомендацию', exerciseIndex);
+                }
+            })
+            .catch(error => {
+                console.error('Error getting suggestion:', error);
+                showSuggestionToast('Ошибка при получении рекомендации', exerciseIndex);
+            });
+    }
+
+    function applySuggestion(exerciseIndex, suggestion) {
+        const weightInput = document.querySelector(`input[name="weight_${exerciseIndex}_0"]`);
+        const repsInput = document.querySelector(`input[name="reps_${exerciseIndex}_0"]`);
+
+        if (weightInput) weightInput.value = suggestion.weight;
+        if (repsInput) repsInput.value = suggestion.reps;
+    }
+
+    // Обработчики для всплывающего уведомления
+    suggestionToastClose.addEventListener('click', hideSuggestionToast);
+
+    // ===== УПРАВЛЕНИЕ ФОРМОЙ =====
+    function createNewExercise() {
+        const firstExercise = container.querySelector('.exercise-form');
+        const newExercise = firstExercise.cloneNode(true);
+        
+        const newIndex = exerciseCount;
+        exerciseCount++;
+        
+        newExercise.setAttribute('data-exercise-index', newIndex);
+        newExercise.querySelector('h4').textContent = `Упражнение ${newIndex + 1}`;
+        
+        // Обновляем имена полей
+        const exerciseSelect = newExercise.querySelector('select');
+        exerciseSelect.name = `exercise_type_${newIndex}`;
+        exerciseSelect.value = '';
+        exerciseSelect.classList.add('exercise-select');
+        
+        // Обновляем кнопки
+        const suggestionBtn = newExercise.querySelector('.get-suggestion-btn');
+        suggestionBtn.setAttribute('data-exercise-index', newIndex);
+        
+        const setsContainer = newExercise.querySelector('.sets-container');
+        setsContainer.setAttribute('data-exercise-index', newIndex);
+        
+        const addSetBtn = newExercise.querySelector('.add-set-btn');
+        addSetBtn.setAttribute('data-exercise-index', newIndex);
+        
+        // Обновляем имена полей в первом подходе
+        const firstSet = newExercise.querySelector('.set-form');
+        firstSet.setAttribute('data-set-index', 0);
+        firstSet.querySelector('h5').textContent = 'Подход 1';
+        
+        const weightInput = firstSet.querySelector('input[name^="weight_"]');
+        const repsInput = firstSet.querySelector('input[name^="reps_"]');
+        const restBtn = firstSet.querySelector('.start-set-rest-btn');
+        
+        if (weightInput) {
+            weightInput.name = `weight_${newIndex}_0`;
+            weightInput.value = '';
+        }
+        if (repsInput) {
+            repsInput.name = `reps_${newIndex}_0`;
+            repsInput.value = '';
+        }
+        if (restBtn) {
+            restBtn.setAttribute('data-exercise-index', newIndex);
+            restBtn.setAttribute('data-set-index', 0);
+        }
+        
+        // Оставляем только первый подход
+        const setForms = newExercise.querySelectorAll('.set-form');
+        for (let i = 1; i < setForms.length; i++) {
+            setForms[i].remove();
+        }
+        
+        // Показываем кнопку удаления для всех упражнений кроме первого
+        if (newIndex > 0) {
+            newExercise.querySelector('.remove-exercise-btn').style.display = 'flex';
+        }
+        
+        // Скрываем кнопки удаления подходов в первом подходе
+        const removeSetBtns = newExercise.querySelectorAll('.remove-set-btn');
+        if (removeSetBtns.length > 0) {
+            removeSetBtns[0].style.display = 'none';
+        }
+        
+        return newExercise;
+    }
+    
+    addExerciseBtn.addEventListener('click', function() {
+        const newExercise = createNewExercise();
+        container.appendChild(newExercise);
+    });
+    
+    container.addEventListener('click', function(e) {
+        // Добавление подхода
+        if (e.target.closest('.add-set-btn')) {
+            const exerciseIndex = e.target.closest('.add-set-btn').getAttribute('data-exercise-index');
+            const setsContainer = document.querySelector(`.sets-container[data-exercise-index="${exerciseIndex}"]`);
+            const setForms = setsContainer.querySelectorAll('.set-form');
+            const setCount = setForms.length;
+            
+            const newSet = setForms[0].cloneNode(true);
+            newSet.setAttribute('data-set-index', setCount);
+            newSet.querySelector('h5').textContent = `Подход ${setCount + 1}`;
+            
+            const inputs = newSet.querySelectorAll('input');
+            inputs.forEach(input => {
+                const name = input.name.replace(/_(\d+)_(\d+)$/, `_${exerciseIndex}_${setCount}`);
+                input.name = name;
+                input.value = '';
+            });
+            
+            // Обновляем кнопку перерыва
+            const restBtn = newSet.querySelector('.start-set-rest-btn');
+            if (restBtn) {
+                restBtn.setAttribute('data-exercise-index', exerciseIndex);
+                restBtn.setAttribute('data-set-index', setCount);
+            }
+            
+            // Показываем кнопку удаления для всех подходов кроме первого
+            const removeSetBtn = newSet.querySelector('.remove-set-btn');
+            if (removeSetBtn) {
+                removeSetBtn.style.display = 'flex';
+            }
+            
+            setsContainer.appendChild(newSet);
+        }
+        
+        // Удаление упражнения
+        if (e.target.closest('.remove-exercise-btn')) {
+            if (container.children.length > 1) {
+                e.target.closest('.exercise-form').remove();
+            }
+        }
+        
+        // Удаление подхода
+        if (e.target.closest('.remove-set-btn')) {
+            const setForm = e.target.closest('.set-form');
+            const setsContainer = setForm.parentElement;
+            if (setsContainer.children.length > 1) {
+                setForm.remove();
+            }
+        }
+        
+        // Запрос предсказания веса
+        if (e.target.closest('.get-suggestion-btn')) {
+            const exerciseIndex = e.target.closest('.get-suggestion-btn').getAttribute('data-exercise-index');
+            const exerciseSelect = document.querySelector(`select[name="exercise_type_${exerciseIndex}"]`);
+            getWeightSuggestion(exerciseSelect.value, exerciseIndex);
+        }
+    });
+    
+    // Обработчик изменения выбора упражнения
+    container.addEventListener('change', function(e) {
+        if (e.target.classList.contains('exercise-select')) {
+            const exerciseIndex = e.target.name.split('_')[2];
+            // Автоматически запрашиваем предсказание при выборе упражнения
+            if (e.target.value) {
+                getWeightSuggestion(e.target.value, exerciseIndex);
+            }
+        }
+    });
+
+    // Валидация формы перед отправкой
+    document.getElementById('workout-session-form').addEventListener('submit', function(e) {
+        const durationValue = durationMinutesInput.value.trim();
+        const workoutNameValue = workoutNameInput.value.trim();
+        const dateValue = dateInput.value;
+        
+        // Автоматическое название тренировки если пустое
+        if (!workoutNameValue) {
+            const dateObj = new Date(dateValue);
+            const formattedDate = dateObj.toLocaleDateString('ru-RU');
+            workoutNameInput.value = `Тренировка ${formattedDate}`;
+        }
+        
+        // Если таймер не был запущен и поле продолжительности пустое
+        if (!durationValue && workoutTimeElapsed === 0) {
+            e.preventDefault();
+            alert('Пожалуйста, укажите продолжительность тренировки в минутах или запустите таймер тренировки.');
+            durationMinutesInput.focus();
+            return;
+        }
+        
+        // Если таймер был запущен, но пользователь вручную изменил значение, используем ручное значение
+        if (durationValue && workoutTimeElapsed > 0) {
+            // Подтверждаем, что пользователь хочет использовать ручное значение вместо автоматического
+            const autoDuration = Math.ceil(workoutTimeElapsed / 60);
+            if (parseInt(durationValue) !== autoDuration) {
+                const confirmUseManual = confirm(
+                    `Таймер тренировки показывает ${autoDuration} минут. Вы хотите использовать ручное значение (${durationValue} минут) вместо автоматического?`
+                );
+                if (!confirmUseManual) {
+                    durationMinutesInput.value = autoDuration;
+                }
+            }
+        }
+    });
+
+    // Запрос разрешения на уведомления
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+
+    // Инициализация
+    updateWorkoutTimerDisplay();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,538 @@
+{% extends "base.html" %}
+
+{% block title %}Добавить упражнение - Фитнес Трекер{% endblock %}
+
+{% block content %}
+<div class="custom-exercise-page">
+    <div class="page-header">
+        <h1>➕ Добавить упражнение</h1>
+        <a href="{{ url_for('custom_exercises') }}" class="btn-secondary">
+            <span>←</span>
+            <span>Назад</span>
+        </a>
+    </div>
+
+    <div class="form-container">
+        <form method="POST" id="custom-exercise-form">
+                
+                <div class="form-group">
+                    <label for="name">
+                        <span class="label-icon">💪</span>
+                        Название упражнения
+                    </label>
+                    <input 
+                        type="text" 
+                        id="name" 
+                        name="name" 
+                        placeholder="Например: Жим штанги лежа" 
+                        required 
+                        maxlength="100"
+                        autocomplete="off">
+                    <div class="input-feedback" id="name-feedback"></div>
+                    <small class="form-hint">Введите название упражнения (макс. 100 символов)</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="muscle_group">
+                        <span class="label-icon">🎯</span>
+                        Группа мышц
+                    </label>
+                    <div class="muscle-group-buttons">
+                        <button type="button" class="muscle-group-btn" data-group="Грудь">
+                            <span>💪</span>
+                            <span>Грудь</span>
+                        </button>
+                        <button type="button" class="muscle-group-btn" data-group="Руки">
+                            <span>💪</span>
+                            <span>Руки</span>
+                        </button>
+                        <button type="button" class="muscle-group-btn" data-group="Плечи">
+                            <span>💪</span>
+                            <span>Плечи</span>
+                        </button>
+                        <button type="button" class="muscle-group-btn" data-group="Ноги">
+                            <span>🦵</span>
+                            <span>Ноги</span>
+                        </button>
+                        <button type="button" class="muscle-group-btn" data-group="Спина">
+                            <span>🏋️</span>
+                            <span>Спина</span>
+                        </button>
+                        <button type="button" class="muscle-group-btn" data-group="Кардио">
+                            <span>🏃</span>
+                            <span>Кардио</span>
+                        </button>
+                    </div>
+                    <select id="muscle_group" name="muscle_group" required style="display: none;">
+                        <option value="">Выберите группу мышц</option>
+                        <option value="Грудь">Грудь</option>
+                        <option value="Руки">Руки</option>
+                        <option value="Плечи">Плечи</option>
+                        <option value="Ноги">Ноги</option>
+                        <option value="Спина">Спина</option>
+                        <option value="Кардио">Кардио</option>
+                    </select>
+                    <small class="form-hint">Выберите целевую группу мышц</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="met_value">
+                        <span class="label-icon">🔥</span>
+                        MET коэффициент
+                    </label>
+                    <div class="met-input-wrapper">
+                        <input 
+                            type="number" 
+                            id="met_value" 
+                            name="met_value" 
+                            placeholder="5.0" 
+                            value="5.0" 
+                            step="0.1" 
+                            min="1.0" 
+                            max="20.0" 
+                            required>
+                        <div class="met-presets">
+                            <span class="met-preset-label">Быстрый выбор:</span>
+                            <button type="button" class="met-preset-btn" data-met="3.0">Легко (3.0)</button>
+                            <button type="button" class="met-preset-btn" data-met="5.0">Средне (5.0)</button>
+                            <button type="button" class="met-preset-btn" data-met="6.0">Интенсивно (6.0)</button>
+                            <button type="button" class="met-preset-btn" data-met="8.0">Очень (8.0)</button>
+                        </div>
+                    </div>
+                    <small class="form-hint">MET (Metabolic Equivalent) - коэффициент для расчета калорий. Обычно от 3.0 до 8.0</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">
+                        <span class="label-icon">📝</span>
+                        Описание (необязательно)
+                    </label>
+                    <textarea 
+                        id="description" 
+                        name="description" 
+                        placeholder="Опишите технику выполнения, рекомендации и т.д." 
+                        rows="4"
+                        maxlength="1000"></textarea>
+                    <div class="char-counter">
+                        <span id="char-count">0</span> / 1000 символов
+                    </div>
+                    <small class="form-hint">Максимум 1000 символов</small>
+                </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn-primary btn-submit" id="submit-btn">
+                    <span>💾</span>
+                    <span>Сохранить упражнение</span>
+                </button>
+                <a href="{{ url_for('custom_exercises') }}" class="btn-secondary">
+                    <span>Отмена</span>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.custom-exercise-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.form-container {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+}
+
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.label-icon {
+    font-size: 1.1rem;
+}
+
+.form-hint {
+    display: block;
+    margin-top: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.input-feedback {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    min-height: 1.2rem;
+}
+
+.input-feedback.error {
+    color: var(--error-color);
+}
+
+.input-feedback.success {
+    color: var(--success-color);
+}
+
+/* Кнопки выбора группы мышц */
+.muscle-group-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.muscle-group-btn {
+    background: linear-gradient(135deg, #f8fafc, white);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    min-height: var(--touch-target-min);
+    pointer-events: auto;
+    z-index: 1;
+    position: relative;
+}
+
+.muscle-group-btn:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.muscle-group-btn.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-md);
+}
+
+.muscle-group-btn:active {
+    transform: translateY(0);
+}
+
+.muscle-group-btn span:first-child {
+    font-size: 1.5rem;
+}
+
+/* MET input wrapper */
+.met-input-wrapper {
+    position: relative;
+}
+
+.met-presets {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.met-preset-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-right: 0.25rem;
+}
+
+.met-preset-btn {
+    background: var(--light-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition);
+    pointer-events: auto;
+    z-index: 1;
+    position: relative;
+}
+
+.met-preset-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.met-preset-btn:active {
+    transform: scale(0.95);
+}
+
+textarea {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    transition: var(--transition);
+    background: var(--light-bg);
+    color: var(--text-primary);
+    font-family: inherit;
+    resize: vertical;
+    min-height: 100px;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1);
+    background: white;
+}
+
+.char-counter {
+    text-align: right;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.char-counter.warning {
+    color: var(--warning-color);
+}
+
+.char-counter.error {
+    color: var(--error-color);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.form-actions .btn-primary,
+.form-actions .btn-secondary {
+    flex: 1;
+    min-width: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    min-height: var(--touch-target-min);
+    pointer-events: auto;
+    cursor: pointer;
+    z-index: 1;
+    position: relative;
+    text-decoration: none;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+    .custom-exercise-page {
+        padding: 0.75rem;
+    }
+    
+    .form-container {
+        padding: 1.5rem;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .muscle-group-buttons {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .btn-primary,
+    .form-actions .btn-secondary {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .muscle-group-buttons {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('custom-exercise-form');
+    const nameInput = document.getElementById('name');
+    const muscleGroupSelect = document.getElementById('muscle_group');
+    const metInput = document.getElementById('met_value');
+    const descriptionTextarea = document.getElementById('description');
+    const charCount = document.getElementById('char-count');
+    const nameFeedback = document.getElementById('name-feedback');
+    const submitBtn = document.getElementById('submit-btn');
+    
+    // Выбор группы мышц через кнопки
+    document.querySelectorAll('.muscle-group-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const group = this.dataset.group;
+            
+            // Убираем активность у всех
+            document.querySelectorAll('.muscle-group-btn').forEach(b => {
+                b.classList.remove('active');
+            });
+            
+            // Активируем выбранную
+            this.classList.add('active');
+            
+            // Устанавливаем значение в select
+            muscleGroupSelect.value = group;
+            
+            // Визуальная обратная связь
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
+        });
+    });
+    
+    // Быстрый выбор MET
+    document.querySelectorAll('.met-preset-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const met = this.dataset.met;
+            metInput.value = met;
+            
+            // Визуальная обратная связь
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
+        });
+    });
+    
+    // Счетчик символов для описания
+    descriptionTextarea.addEventListener('input', function() {
+        const length = this.value.length;
+        charCount.textContent = length;
+        
+        if (length > 900) {
+            charCount.classList.add('error');
+            charCount.classList.remove('warning');
+        } else if (length > 800) {
+            charCount.classList.add('warning');
+            charCount.classList.remove('error');
+        } else {
+            charCount.classList.remove('warning', 'error');
+        }
+    });
+    
+    // Валидация названия в реальном времени
+    nameInput.addEventListener('input', function() {
+        const value = this.value.trim();
+        const feedback = nameFeedback;
+        
+        if (value.length === 0) {
+            feedback.textContent = '';
+            feedback.className = 'input-feedback';
+            return;
+        }
+        
+        if (value.length < 3) {
+            feedback.textContent = 'Название должно быть не менее 3 символов';
+            feedback.className = 'input-feedback error';
+        } else if (value.length > 100) {
+            feedback.textContent = 'Название слишком длинное (макс. 100 символов)';
+            feedback.className = 'input-feedback error';
+        } else {
+            feedback.textContent = '✓ Название корректно';
+            feedback.className = 'input-feedback success';
+        }
+    });
+    
+    // Валидация формы перед отправкой
+    form.addEventListener('submit', function(e) {
+        const name = nameInput.value.trim();
+        const muscleGroup = muscleGroupSelect.value;
+        const met = parseFloat(metInput.value);
+        
+        if (!name || name.length < 3) {
+            e.preventDefault();
+            nameInput.focus();
+            nameFeedback.textContent = 'Пожалуйста, введите название упражнения (минимум 3 символа)';
+            nameFeedback.className = 'input-feedback error';
+            return;
+        }
+        
+        if (!muscleGroup) {
+            e.preventDefault();
+            alert('Пожалуйста, выберите группу мышц');
+            return;
+        }
+        
+        if (!met || met < 1 || met > 20) {
+            e.preventDefault();
+            alert('Пожалуйста, введите корректный MET коэффициент (от 1.0 до 20.0)');
+            metInput.focus();
+            return;
+        }
+        
+        // Показываем индикатор загрузки
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span>⏳</span><span>Сохранение...</span>';
+    });
+    
+    // Инициализация счетчика символов
+    charCount.textContent = descriptionTextarea.value.length;
+});
+</script>
+{% endblock %}
