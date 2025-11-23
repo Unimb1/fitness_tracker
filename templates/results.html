@@ -1,0 +1,1168 @@
+{% extends "base.html" %}
+
+{% block title %}Результаты - Фитнес Трекер{% endblock %}
+
+{% block content %}
+<div class="results-page">
+    <div class="page-header">
+        <h1>Результаты</h1>
+        <p class="page-subtitle">Отслеживайте свой прогресс</p>
+    </div>
+
+    <!-- Навигация по разделам -->
+    <div class="results-tabs">
+        <button class="tab-btn active" data-tab="history">📅 История</button>
+        <button class="tab-btn" data-tab="weight">⚖️ Весы</button>
+        <button class="tab-btn" data-tab="photos">📸 Фотографии</button>
+        <button class="tab-btn" data-tab="measurements">📏 Замеры</button>
+    </div>
+
+    <!-- История - Календарь -->
+    <div class="tab-content active" id="history-tab">
+        <div class="section-header">
+            <h2>Календарь тренировок</h2>
+        </div>
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <button class="calendar-nav-btn" id="prev-month">←</button>
+                <h3 id="current-month-year"></h3>
+                <button class="calendar-nav-btn" id="next-month">→</button>
+            </div>
+            <div class="calendar-grid" id="calendar-grid"></div>
+            <div class="workout-details" id="workout-details" style="display: none;">
+                <h4 id="workout-date-title"></h4>
+                <div id="workout-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Весы -->
+    <div class="tab-content" id="weight-tab">
+        <div class="section-header">
+            <h2>Вес и процент жира</h2>
+            <button class="btn-primary" id="add-weight-btn">+ Записать</button>
+        </div>
+        <div class="weight-chart-container">
+            <canvas id="weight-chart"></canvas>
+        </div>
+        <div class="weight-stats">
+            <div class="stat-card">
+                <div class="stat-label">Текущий вес</div>
+                <div class="stat-value" id="current-weight">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Изменение</div>
+                <div class="stat-value" id="weight-change">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Процент жира</div>
+                <div class="stat-value" id="current-fat">-</div>
+            </div>
+        </div>
+        <div class="weight-list" id="weight-list">
+            {% for weight in body_weights %}
+            <div class="weight-item">
+                <div class="weight-item-date">{{ weight.date.strftime('%d.%m.%Y') }}</div>
+                <div class="weight-item-values">
+                    <span class="weight-value">{{ "%.1f"|format(weight.weight) }} кг</span>
+                    {% if weight.body_fat_percentage %}
+                    <span class="fat-value">{{ "%.1f"|format(weight.body_fat_percentage) }}% жира</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Фотографии -->
+    <div class="tab-content" id="photos-tab">
+        <div class="section-header">
+            <h2>Фотографии прогресса</h2>
+            <button class="btn-primary" id="add-photo-btn">+ Добавить фотографию</button>
+        </div>
+        <div class="photos-grid" id="photos-grid">
+            {% for photo in photos %}
+            <div class="photo-card">
+                <img src="{{ url_for('static', filename=photo.photo_path) }}" alt="Фото прогресса" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'400\'%3E%3Crect fill=\'%23ddd\' width=\'300\' height=\'400\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\'%3EФото%3C/text%3E%3C/svg%3E'">
+                <div class="photo-info">
+                    <div class="photo-date">{{ photo.date.strftime('%d.%m.%Y') }}</div>
+                    {% if photo.notes %}
+                    <div class="photo-notes">{{ photo.notes }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Замеры -->
+    <div class="tab-content" id="measurements-tab">
+        <div class="section-header">
+            <h2>Замеры тела</h2>
+            <button class="btn-primary" id="add-measurement-btn">+ Замерить</button>
+        </div>
+        <div class="measurements-chart-container">
+            <canvas id="measurements-chart"></canvas>
+        </div>
+        <div class="measurements-list" id="measurements-list">
+            {% for measurement in measurements %}
+            <div class="measurement-card">
+                <div class="measurement-date">{{ measurement.date.strftime('%d.%m.%Y') }}</div>
+                <div class="measurement-values">
+                    {% if measurement.neck %}<div class="measure-item"><span>Шея:</span><span>{{ "%.1f"|format(measurement.neck) }} см</span></div>{% endif %}
+                    {% if measurement.shoulders %}<div class="measure-item"><span>Плечи:</span><span>{{ "%.1f"|format(measurement.shoulders) }} см</span></div>{% endif %}
+                    {% if measurement.chest %}<div class="measure-item"><span>Грудь:</span><span>{{ "%.1f"|format(measurement.chest) }} см</span></div>{% endif %}
+                    {% if measurement.waist %}<div class="measure-item"><span>Талия:</span><span>{{ "%.1f"|format(measurement.waist) }} см</span></div>{% endif %}
+                    {% if measurement.hips %}<div class="measure-item"><span>Таз:</span><span>{{ "%.1f"|format(measurement.hips) }} см</span></div>{% endif %}
+                    {% if measurement.thigh %}<div class="measure-item"><span>Бедро:</span><span>{{ "%.1f"|format(measurement.thigh) }} см</span></div>{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Модальные окна -->
+<div id="weight-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Записать вес</h2>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="weight-form">
+                <div class="form-group">
+                    <label>Вес (кг)</label>
+                    <input type="number" id="weight-input" step="0.1" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Процент жира (%)</label>
+                    <input type="number" id="fat-input" step="0.1" min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Дата</label>
+                    <input type="date" id="weight-date-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Заметки</label>
+                    <textarea id="weight-notes-input" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Сохранить</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="photo-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Добавить фотографию</h2>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="photo-form" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Фотография</label>
+                    <input type="file" id="photo-input" accept="image/*" required>
+                    <div id="photo-preview" class="photo-preview"></div>
+                </div>
+                <div class="form-group">
+                    <label>Тип</label>
+                    <select id="photo-type-input">
+                        <option value="front">Спереди</option>
+                        <option value="side">Сбоку</option>
+                        <option value="back">Сзади</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Заметки</label>
+                    <textarea id="photo-notes-input" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Загрузить</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="measurement-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Замерить</h2>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="measurement-form">
+                <div class="form-group">
+                    <label>Шея (см)</label>
+                    <input type="number" id="neck-input" step="0.1" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Плечи (см)</label>
+                    <input type="number" id="shoulders-input" step="0.1" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Предплечья (см)</label>
+                    <input type="number" id="forearms-input" step="0.1" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Бицепс (см)</label>
+                    <input type="number" id="biceps-input" step="0.1" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Грудь (см)</label>
+                    <input type="number" id="chest-input" step="0.1" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Талия (см)</label>
+                    <input type="number" id="waist-input" step="0.1" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Живот (см)</label>
+                    <input type="number" id="abdomen-input" step="0.1" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Таз (см)</label>
+                    <input type="number" id="hips-input" step="0.1" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Бедро (см)</label>
+                    <input type="number" id="thigh-input" step="0.1" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Икры (см)</label>
+                    <input type="number" id="calves-input" step="0.1" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Дата</label>
+                    <input type="date" id="measurement-date-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Заметки</label>
+                    <textarea id="measurement-notes-input" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Сохранить</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.results-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.results-tabs {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    background: var(--card-bg);
+    padding: 0.75rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.tab-btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 1rem 1.5rem;
+    background: var(--light-bg);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.tab-btn:hover {
+    border-color: var(--primary-color);
+    background: white;
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Календарь */
+.calendar-container {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.calendar-header h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.calendar-nav-btn {
+    background: var(--light-bg);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: var(--transition);
+}
+
+.calendar-nav-btn:hover {
+    border-color: var(--primary-color);
+    background: white;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.calendar-day-header {
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    background: white;
+    position: relative;
+}
+
+.calendar-day:hover {
+    border-color: var(--primary-color);
+    transform: scale(1.05);
+}
+
+.calendar-day.other-month {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.calendar-day.has-workout {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border-color: var(--primary-color);
+    font-weight: 700;
+}
+
+.calendar-day.selected {
+    border-color: var(--primary-color);
+    border-width: 3px;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.day-number {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.workout-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.8);
+    margin-top: 0.25rem;
+}
+
+.workout-details {
+    background: var(--light-bg);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    margin-top: 1.5rem;
+    border: 2px solid var(--border-color);
+}
+
+.workout-item {
+    background: white;
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 0.75rem;
+    border-left: 4px solid var(--primary-color);
+}
+
+.workout-item h5 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.workout-item-info {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* Весы */
+.weight-chart-container {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    margin-bottom: 1.5rem;
+    height: 300px;
+}
+
+.weight-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #f8fafc, white);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--border-color);
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.weight-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.weight-item {
+    background: var(--card-bg);
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.weight-item:hover {
+    border-color: var(--primary-color);
+    transform: translateX(4px);
+}
+
+.weight-item-date {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.weight-item-values {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.weight-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.fat-value {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    padding: 0.25rem 0.75rem;
+    background: var(--light-bg);
+    border-radius: var(--radius-sm);
+}
+
+/* Фотографии */
+.photos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.photo-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    transition: var(--transition);
+}
+
+.photo-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.photo-card img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+}
+
+.photo-info {
+    padding: 1rem;
+}
+
+.photo-date {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.photo-notes {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* Замеры */
+.measurements-chart-container {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    margin-bottom: 1.5rem;
+    height: 300px;
+}
+
+.measurements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.measurement-card {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.measurement-date {
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.measurement-values {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+}
+
+.measure-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background: var(--light-bg);
+    border-radius: var(--radius-sm);
+}
+
+.measure-item span:first-child {
+    color: var(--text-secondary);
+}
+
+.measure-item span:last-child {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Модальные окна */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease-out;
+    overflow-y: auto;
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.modal-content {
+    background: white;
+    border-radius: var(--radius-xl);
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-xl);
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    font-size: 2rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+    line-height: 1;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 0.875rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: var(--transition);
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.photo-preview {
+    margin-top: 1rem;
+    max-width: 100%;
+}
+
+.photo-preview img {
+    max-width: 100%;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--border-color);
+}
+
+@media (max-width: 768px) {
+    .results-tabs {
+        flex-direction: column;
+    }
+    
+    .tab-btn {
+        width: 100%;
+    }
+    
+    .calendar-grid {
+        gap: 0.25rem;
+    }
+    
+    .calendar-day {
+        font-size: 0.85rem;
+    }
+    
+    .photos-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .weight-stats {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const workoutsData = {{ workouts_by_date | tojson }};
+    let currentDate = new Date();
+    let weightChart = null;
+    let measurementsChart = null;
+    
+    // Переключение вкладок
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabName = this.dataset.tab;
+            
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            this.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            
+            // Инициализация графиков при переключении
+            if (tabName === 'weight' && !weightChart) {
+                initWeightChart();
+            }
+            if (tabName === 'measurements' && !measurementsChart) {
+                initMeasurementsChart();
+            }
+        });
+    });
+    
+    // Календарь
+    function renderCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        
+        document.getElementById('current-month-year').textContent = 
+            new Date(year, month).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+        
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        const startingDayOfWeek = firstDay.getDay();
+        const adjustedStart = startingDayOfWeek === 0 ? 6 : startingDayOfWeek - 1;
+        
+        const grid = document.getElementById('calendar-grid');
+        grid.innerHTML = '';
+        
+        // Заголовки дней недели
+        const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+        dayNames.forEach(day => {
+            const header = document.createElement('div');
+            header.className = 'calendar-day-header';
+            header.textContent = day;
+            grid.appendChild(header);
+        });
+        
+        // Дни предыдущего месяца
+        const prevMonthLastDay = new Date(year, month, 0).getDate();
+        for (let i = adjustedStart - 1; i >= 0; i--) {
+            const day = document.createElement('div');
+            day.className = 'calendar-day other-month';
+            day.textContent = prevMonthLastDay - i;
+            grid.appendChild(day);
+        }
+        
+        // Дни текущего месяца
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day';
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            
+            if (workoutsData[dateStr]) {
+                dayElement.classList.add('has-workout');
+                dayElement.dataset.date = dateStr;
+                dayElement.dataset.workouts = JSON.stringify(workoutsData[dateStr]);
+            }
+            
+            const dayNumber = document.createElement('div');
+            dayNumber.className = 'day-number';
+            dayNumber.textContent = day;
+            dayElement.appendChild(dayNumber);
+            
+            if (workoutsData[dateStr]) {
+                const indicator = document.createElement('div');
+                indicator.className = 'workout-indicator';
+                dayElement.appendChild(indicator);
+            }
+            
+            dayElement.addEventListener('click', function() {
+                if (this.dataset.date) {
+                    showWorkoutDetails(this.dataset.date, JSON.parse(this.dataset.workouts));
+                    document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
+                    this.classList.add('selected');
+                }
+            });
+            
+            grid.appendChild(dayElement);
+        }
+        
+        // Дни следующего месяца
+        const totalCells = grid.children.length - 7; // Минус заголовки
+        const remainingCells = 42 - totalCells; // 6 недель * 7 дней
+        for (let day = 1; day <= remainingCells; day++) {
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day other-month';
+            dayElement.textContent = day;
+            grid.appendChild(dayElement);
+        }
+    }
+    
+    function showWorkoutDetails(dateStr, workouts) {
+        const details = document.getElementById('workout-details');
+        const title = document.getElementById('workout-date-title');
+        const list = document.getElementById('workout-list');
+        
+        const date = new Date(dateStr);
+        title.textContent = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+        
+        list.innerHTML = '';
+        workouts.forEach(workout => {
+            const item = document.createElement('div');
+            item.className = 'workout-item';
+            item.innerHTML = `
+                <h5>${workout.name}</h5>
+                <div class="workout-item-info">
+                    ${workout.duration ? `<span>⏱ ${workout.duration} мин</span>` : ''}
+                    ${workout.calories ? `<span>🔥 ${Math.round(workout.calories)} ккал</span>` : ''}
+                </div>
+            `;
+            list.appendChild(item);
+        });
+        
+        details.style.display = 'block';
+    }
+    
+    document.getElementById('prev-month').addEventListener('click', function() {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        renderCalendar();
+    });
+    
+    document.getElementById('next-month').addEventListener('click', function() {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        renderCalendar();
+    });
+    
+    renderCalendar();
+    
+    // Модальные окна
+    const modals = {
+        weight: document.getElementById('weight-modal'),
+        photo: document.getElementById('photo-modal'),
+        measurement: document.getElementById('measurement-modal')
+    };
+    
+    function openModal(modalName) {
+        modals[modalName].classList.add('show');
+        if (modalName === 'weight') {
+            document.getElementById('weight-date-input').value = new Date().toISOString().split('T')[0];
+        }
+        if (modalName === 'measurement') {
+            document.getElementById('measurement-date-input').value = new Date().toISOString().split('T')[0];
+        }
+    }
+    
+    function closeModal(modalName) {
+        modals[modalName].classList.remove('show');
+    }
+    
+    document.getElementById('add-weight-btn').addEventListener('click', () => openModal('weight'));
+    document.getElementById('add-photo-btn').addEventListener('click', () => openModal('photo'));
+    document.getElementById('add-measurement-btn').addEventListener('click', () => openModal('measurement'));
+    
+    document.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const modal = this.closest('.modal');
+            modal.classList.remove('show');
+        });
+    });
+    
+    window.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal')) {
+            e.target.classList.remove('show');
+        }
+    });
+    
+    // Форма веса
+    document.getElementById('weight-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const data = {
+            weight: parseFloat(document.getElementById('weight-input').value),
+            body_fat: parseFloat(document.getElementById('fat-input').value) || null,
+            date: document.getElementById('weight-date-input').value,
+            notes: document.getElementById('weight-notes-input').value
+        };
+        
+        fetch('/api/add-body-weight', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                closeModal('weight');
+                location.reload();
+            } else {
+                alert('Ошибка: ' + result.error);
+            }
+        });
+    });
+    
+    // Форма фотографии
+    document.getElementById('photo-input').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('photo-preview');
+                preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    document.getElementById('photo-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData();
+        formData.append('photo', document.getElementById('photo-input').files[0]);
+        formData.append('photo_type', document.getElementById('photo-type-input').value);
+        formData.append('notes', document.getElementById('photo-notes-input').value);
+        
+        fetch('/api/upload-photo', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                closeModal('photo');
+                location.reload();
+            } else {
+                alert('Ошибка: ' + result.error);
+            }
+        });
+    });
+    
+    // Форма замеров
+    document.getElementById('measurement-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const data = {
+            date: document.getElementById('measurement-date-input').value,
+            neck: parseFloat(document.getElementById('neck-input').value) || null,
+            shoulders: parseFloat(document.getElementById('shoulders-input').value) || null,
+            forearms: parseFloat(document.getElementById('forearms-input').value) || null,
+            biceps: parseFloat(document.getElementById('biceps-input').value) || null,
+            chest: parseFloat(document.getElementById('chest-input').value) || null,
+            waist: parseFloat(document.getElementById('waist-input').value) || null,
+            abdomen: parseFloat(document.getElementById('abdomen-input').value) || null,
+            hips: parseFloat(document.getElementById('hips-input').value) || null,
+            thigh: parseFloat(document.getElementById('thigh-input').value) || null,
+            calves: parseFloat(document.getElementById('calves-input').value) || null,
+            notes: document.getElementById('measurement-notes-input').value
+        };
+        
+        fetch('/api/add-body-measurement', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                closeModal('measurement');
+                location.reload();
+            } else {
+                alert('Ошибка: ' + result.error);
+            }
+        });
+    });
+    
+    // Графики
+    function initWeightChart() {
+        const ctx = document.getElementById('weight-chart');
+        if (!ctx) return;
+        
+        const weights = {{ body_weights | tojson }};
+        const labels = weights.map(w => new Date(w.date).toLocaleDateString('ru-RU'));
+        const weightData = weights.map(w => w.weight);
+        const fatData = weights.map(w => w.body_fat_percentage).filter(f => f !== null);
+        
+        weightChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Вес (кг)',
+                        data: weightData,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Процент жира (%)',
+                        data: fatData,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        title: { display: true, text: 'Вес (кг)' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'Процент жира (%)' },
+                        grid: { drawOnChartArea: false }
+                    }
+                }
+            }
+        });
+        
+        // Обновляем статистику
+        if (weights.length > 0) {
+            const latest = weights[0];
+            document.getElementById('current-weight').textContent = latest.weight.toFixed(1) + ' кг';
+            if (latest.body_fat_percentage) {
+                document.getElementById('current-fat').textContent = latest.body_fat_percentage.toFixed(1) + '%';
+            }
+            
+            if (weights.length > 1) {
+                const change = latest.weight - weights[weights.length - 1].weight;
+                const changeEl = document.getElementById('weight-change');
+                changeEl.textContent = (change > 0 ? '+' : '') + change.toFixed(1) + ' кг';
+                changeEl.style.color = change > 0 ? '#ef4444' : '#10b981';
+            }
+        }
+    }
+    
+    function initMeasurementsChart() {
+        const ctx = document.getElementById('measurements-chart');
+        if (!ctx) return;
+        
+        const measurements = {{ measurements | tojson }};
+        // Здесь можно добавить график замеров
+    }
+});
+</script>
+{% endblock %}
+

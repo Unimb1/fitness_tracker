@@ -1,0 +1,675 @@
+{% extends "base.html" %}
+
+{% block title %}Глоссарий упражнений - Фитнес Трекер{% endblock %}
+
+{% block content %}
+<div class="glossary-page">
+    <div class="page-header">
+        <h1>📚 Глоссарий упражнений</h1>
+        <p class="page-subtitle">Подробное описание техники выполнения, целевых мышц и рекомендаций</p>
+    </div>
+
+    <!-- Поиск и фильтры -->
+    <div class="glossary-controls">
+        <div class="search-container">
+            <input type="text" id="exercise-search" class="search-input" placeholder="🔍 Поиск упражнений...">
+            <button class="search-btn" id="search-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all">Все</button>
+            <button class="filter-btn" data-filter="Грудь">Грудь</button>
+            <button class="filter-btn" data-filter="Руки">Руки</button>
+            <button class="filter-btn" data-filter="Плечи">Плечи</button>
+            <button class="filter-btn" data-filter="Ноги">Ноги</button>
+            <button class="filter-btn" data-filter="Спина">Спина</button>
+            <button class="filter-btn" data-filter="Кардио">Кардио</button>
+        </div>
+        
+        <button class="fetch-exercise-btn" id="fetch-exercise-btn">
+            <span>🌐</span>
+            <span>Найти упражнение в интернете</span>
+        </button>
+    </div>
+
+    <!-- Результаты поиска из интернета -->
+    <div id="online-results" class="online-results" style="display: none;">
+        <h3>Результаты поиска</h3>
+        <div id="online-results-content"></div>
+    </div>
+
+    <!-- Список упражнений -->
+    <div class="exercises-grid" id="exercises-grid">
+        {% for muscle_group, exercises in exercises_glossary.items() %}
+        {% for exercise in exercises %}
+        <div class="exercise-card" data-group="{{ muscle_group }}" data-name="{{ exercise.name|lower }}">
+            <div class="exercise-image-container">
+                <div class="exercise-image" data-exercise="{{ exercise.name }}">
+                    <div class="image-placeholder">
+                        <span class="placeholder-icon">💪</span>
+                        <span class="placeholder-text">Загрузка изображения...</span>
+                    </div>
+                </div>
+                <button class="load-image-btn" data-exercise="{{ exercise.name }}" title="Загрузить изображение">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="exercise-content">
+                <div class="exercise-header">
+                    <h3>{{ exercise.name }}</h3>
+                    <span class="exercise-group-badge">{{ muscle_group }}</span>
+                </div>
+                
+                <div class="exercise-details">
+                    <div class="detail-section">
+                        <h4>📖 Описание</h4>
+                        <p>{{ exercise.description }}</p>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4>💪 Техника выполнения</h4>
+                        <p>{{ exercise.technique }}</p>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4>🎯 Целевые мышцы</h4>
+                        <div class="muscles-tags">
+                            {% for muscle in exercise.muscles.split(',') %}
+                            <span class="muscle-tag">{{ muscle.strip() }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4>💡 Рекомендации</h4>
+                        <p>{{ exercise.recommendations }}</p>
+                    </div>
+                    
+                    {% if exercise.sources %}
+                    <div class="detail-section sources">
+                        <h4>🔗 Источники</h4>
+                        <div class="sources-list">
+                            {% for source in exercise.sources %}
+                            <a href="{{ source }}" target="_blank" rel="noopener noreferrer" class="source-link">
+                                <span>🔗</span>
+                                <span>{{ source }}</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endfor %}
+    </div>
+
+    <!-- Модальное окно для поиска в интернете -->
+    <div id="fetch-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🌐 Поиск упражнения в интернете</h2>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="fetch-input" class="fetch-input" placeholder="Введите название упражнения...">
+                <button class="fetch-submit-btn" id="fetch-submit-btn">Найти</button>
+                <div id="fetch-results" class="fetch-results"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.glossary-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.glossary-controls {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    margin-bottom: 2rem;
+    border: 1px solid var(--border-color);
+}
+
+.search-container {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.search-input {
+    flex: 1;
+    padding: 1rem 1.25rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-btn {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border: none;
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.filter-btn {
+    padding: 0.75rem 1.25rem;
+    background: var(--light-bg);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.filter-btn:hover {
+    border-color: var(--primary-color);
+    background: white;
+}
+
+.filter-btn.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.fetch-exercise-btn {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+    color: white;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    transition: var(--transition);
+}
+
+.fetch-exercise-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.exercises-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 2rem;
+}
+
+.exercise-card {
+    background: linear-gradient(135deg, #f8fafc, white);
+    border-radius: var(--radius-xl);
+    border: 2px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    transition: var(--transition);
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.exercise-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+}
+
+.exercise-card.hidden {
+    display: none;
+}
+
+.exercise-image-container {
+    position: relative;
+    width: 100%;
+    height: 250px;
+    background: linear-gradient(135deg, #e0e7ff, #f3e8ff);
+    overflow: hidden;
+}
+
+.exercise-image {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.image-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+}
+
+.placeholder-icon {
+    font-size: 3rem;
+}
+
+.placeholder-text {
+    font-size: 0.9rem;
+}
+
+.load-image-btn {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.load-image-btn:hover {
+    background: white;
+    transform: scale(1.1);
+}
+
+.exercise-content {
+    padding: 1.5rem;
+}
+
+.exercise-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.25rem;
+    gap: 1rem;
+}
+
+.exercise-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.exercise-group-badge {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.exercise-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.detail-section {
+    padding: 1rem;
+    background: white;
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--primary-color);
+}
+
+.detail-section h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.detail-section p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.muscles-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.muscle-tag {
+    background: var(--light-bg);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.sources-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.source-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--secondary-color);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: var(--transition);
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+}
+
+.source-link:hover {
+    background: var(--light-bg);
+    color: var(--primary-color);
+}
+
+/* Модальное окно */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: var(--radius-xl);
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-xl);
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    font-size: 2rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.fetch-input {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.fetch-submit-btn {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border: none;
+    color: white;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.fetch-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.fetch-results {
+    margin-top: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .exercises-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-header h1 {
+        font-size: 2rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('exercise-search');
+    const searchBtn = document.getElementById('search-btn');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const exerciseCards = document.querySelectorAll('.exercise-card');
+    const fetchBtn = document.getElementById('fetch-exercise-btn');
+    const modal = document.getElementById('fetch-modal');
+    const modalClose = document.getElementById('modal-close');
+    const fetchInput = document.getElementById('fetch-input');
+    const fetchSubmitBtn = document.getElementById('fetch-submit-btn');
+    const fetchResults = document.getElementById('fetch-results');
+    
+    let currentFilter = 'all';
+    
+    // Поиск
+    function performSearch() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        
+        exerciseCards.forEach(card => {
+            const name = card.dataset.name || '';
+            const group = card.dataset.group || '';
+            const matchesSearch = !searchTerm || name.includes(searchTerm);
+            const matchesFilter = currentFilter === 'all' || group === currentFilter;
+            
+            if (matchesSearch && matchesFilter) {
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
+            }
+        });
+    }
+    
+    searchInput.addEventListener('input', performSearch);
+    searchBtn.addEventListener('click', performSearch);
+    
+    // Фильтры
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentFilter = this.dataset.filter;
+            performSearch();
+        });
+    });
+    
+    // Модальное окно
+    fetchBtn.addEventListener('click', function() {
+        modal.classList.add('show');
+    });
+    
+    modalClose.addEventListener('click', function() {
+        modal.classList.remove('show');
+    });
+    
+    window.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.classList.remove('show');
+        }
+    });
+    
+    // Поиск в интернете
+    fetchSubmitBtn.addEventListener('click', function() {
+        const exerciseName = fetchInput.value.trim();
+        if (!exerciseName) return;
+        
+        fetchResults.innerHTML = '<p>Поиск...</p>';
+        
+        fetch('/api/fetch-exercise', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name: exerciseName })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                fetchResults.innerHTML = `
+                    <div class="fetched-exercise">
+                        <h3>${data.exercise.name}</h3>
+                        <p><strong>Описание:</strong> ${data.exercise.description || 'Не найдено'}</p>
+                        <p><strong>Техника:</strong> ${data.exercise.technique || 'Не найдено'}</p>
+                        <p><strong>Мышцы:</strong> ${data.exercise.muscles || 'Не найдено'}</p>
+                        ${data.exercise.image ? `<img src="${data.exercise.image}" alt="${data.exercise.name}" style="max-width: 100%; margin-top: 1rem; border-radius: 8px;">` : ''}
+                    </div>
+                `;
+            } else {
+                fetchResults.innerHTML = `<p style="color: var(--error-color);">${data.error || 'Не удалось найти упражнение'}</p>`;
+            }
+        })
+        .catch(error => {
+            fetchResults.innerHTML = '<p style="color: var(--error-color);">Ошибка при поиске</p>';
+        });
+    });
+    
+    // Загрузка изображений
+    document.querySelectorAll('.load-image-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const exerciseName = this.dataset.exercise;
+            const imageContainer = this.closest('.exercise-image-container').querySelector('.exercise-image');
+            const placeholder = imageContainer.querySelector('.image-placeholder');
+            
+            // Используем API для получения изображения
+            fetch(`/api/exercise-image?name=${encodeURIComponent(exerciseName)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.image) {
+                        imageContainer.style.backgroundImage = `url(${data.image})`;
+                        if (placeholder) placeholder.style.display = 'none';
+                    }
+                });
+        });
+    });
+});
+</script>
+{% endblock %}

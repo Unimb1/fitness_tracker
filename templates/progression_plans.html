@@ -1,0 +1,491 @@
+{% extends "base.html" %}
+
+{% block title %}Планы прогрессии - Фитнес Трекер{% endblock %}
+
+{% block content %}
+<div class="progression-page">
+    <div class="header">
+        <h1>📈 Планы прогрессии</h1>
+        <a href="{{ url_for('add_progression_plan') }}" class="btn-primary">+ Новый план</a>
+    </div>
+
+    {% if plans %}
+    <div class="progression-dashboard">
+        {% for plan in plans %}
+        <div class="progression-card {% if not plan.is_active %}inactive{% endif %}">
+            <div class="card-header">
+                <div class="exercise-title">
+                    <h3>{{ plan.exercise_type }}</h3>
+                    {% if plan.is_active %}
+                    <span class="status-badge active">Активен</span>
+                    {% else %}
+                    <span class="status-badge inactive">Неактивен</span>
+                    {% endif %}
+                </div>
+                <a href="{{ url_for('delete_progression_plan', plan_id=plan.id) }}" 
+                   class="delete-btn"
+                   onclick="return confirm('Удалить план прогрессии?')" 
+                   title="Удалить">×</a>
+            </div>
+            
+            <div class="progress-visualization">
+                {% set current_w = plan.current_weight|float %}
+                {% set target_w = plan.target_weight|float %}
+                {% set progress_pct = (current_w / target_w * 100) if target_w > 0 else 0 %}
+                
+                <div class="weight-display">
+                    <div class="current-weight">
+                        <span class="label">Текущий</span>
+                        <span class="value">{{ "%.1f"|format(current_w) }}<small>кг</small></span>
+                    </div>
+                    <div class="progress-arrow">→</div>
+                    <div class="target-weight">
+                        <span class="label">Цель</span>
+                        <span class="value">{{ "%.1f"|format(target_w) }}<small>кг</small></span>
+                    </div>
+                </div>
+                
+                <div class="progress-bar-container">
+                    <div class="progress-bar">
+                        {% set final_pct = progress_pct if progress_pct <= 100 else 100 %}
+                        <div class="progress-fill" style="width: {{ final_pct }}%;"></div>
+                        <span class="progress-text">{{ "%.1f"|format(final_pct) }}%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon">📊</div>
+                    <div class="metric-content">
+                        <span class="metric-label">Осталось</span>
+                        <span class="metric-value">{{ "%.1f"|format(plan.remaining_weight) }} кг</span>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon">⚡</div>
+                    <div class="metric-content">
+                        <span class="metric-label">Шаг</span>
+                        <span class="metric-value">+{{ "%.1f"|format(plan.weight_increment) }} кг</span>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon">📅</div>
+                    <div class="metric-content">
+                        <span class="metric-label">ETA</span>
+                        <span class="metric-value">{{ plan.eta_weeks }} нед.</span>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon">🎯</div>
+                    <div class="metric-content">
+                        <span class="metric-label">Достижение</span>
+                        <span class="metric-value">{{ plan.estimated_date }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-section">
+                <h4>История прогресса</h4>
+                <div class="chart-wrapper">
+                    <canvas id="chart_{{ plan.id }}" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📈</div>
+        <h2>Нет планов прогрессии</h2>
+        <p>Создайте план для отслеживания прогресса в упражнениях</p>
+        <a href="{{ url_for('add_progression_plan') }}" class="btn-primary">Создать первый план</a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.progression-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.progression-page .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.progression-page .header h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.progression-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 2rem;
+}
+
+.progression-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.progression-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.progression-card.inactive {
+    opacity: 0.6;
+    background: #f9fafb;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.exercise-title {
+    flex: 1;
+}
+
+.exercise-title h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge.inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.delete-btn {
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 24px;
+    font-weight: 300;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.delete-btn:hover {
+    color: #ef4444;
+    background: #fee2e2;
+    transform: scale(1.1) rotate(90deg);
+}
+
+.progress-visualization {
+    margin-bottom: 2rem;
+}
+
+.weight-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
+.current-weight, .target-weight {
+    flex: 1;
+    text-align: center;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 12px;
+}
+
+.current-weight .label, .target-weight .label {
+    display: block;
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.current-weight .value, .target-weight .value {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.current-weight .value small, .target-weight .value small {
+    font-size: 1rem;
+    color: #6b7280;
+    font-weight: 400;
+}
+
+.progress-arrow {
+    font-size: 1.5rem;
+    color: #6b7280;
+    font-weight: 300;
+}
+
+.progress-bar-container {
+    margin-top: 1rem;
+}
+
+.progress-bar {
+    position: relative;
+    background: #e5e7eb;
+    border-radius: 10px;
+    height: 24px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, #4b5563, #1f2937);
+    height: 100%;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 10px;
+    position: relative;
+}
+
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.metric-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.metric-icon {
+    font-size: 1.5rem;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.metric-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.metric-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.metric-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.chart-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.chart-section h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 200px;
+    width: 100%;
+}
+
+.chart-wrapper canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: #ffffff;
+    border-radius: 16px;
+    border: 2px dashed #d1d5db;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    color: #1a1a1a;
+}
+
+.empty-state p {
+    margin: 0 0 2rem 0;
+    color: #6b7280;
+}
+
+@media (max-width: 768px) {
+    .progression-dashboard {
+        grid-template-columns: 1fr;
+    }
+    
+    .progression-page .header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .weight-display {
+        flex-direction: column;
+    }
+    
+    .progress-arrow {
+        transform: rotate(90deg);
+    }
+}
+</style>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const chartData = {{ progression_charts_json | safe }};
+    
+    Object.keys(chartData || {}).forEach((exType) => {
+        const data = chartData[exType];
+        const planId = data.plan_id;
+        if (!planId) return;
+        
+        const canvas = document.getElementById('chart_' + planId);
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.dates || [],
+                datasets: [{
+                    label: 'Максимальный вес (кг)',
+                    data: data.weights || [],
+                    borderColor: 'rgba(31, 41, 55, 1)',
+                    backgroundColor: 'rgba(31, 41, 55, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#1f2937',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#1f2937',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#6b7280', font: { size: 11 } },
+                        grid: { color: '#e5e7eb', drawBorder: false }
+                    },
+                    y: {
+                        ticks: { color: '#6b7280', font: { size: 11 } },
+                        grid: { color: '#e5e7eb', drawBorder: false },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}
